@@ -21,3 +21,5 @@ Sau khi mọi người xong thì tải về knit html
 | Trần Việt Hà       | Tổng hợp nội dung, code minh họa                                               | 100%              |
 
 ## Câu hỏi thảo luận
+
+1. Khi xây dựng mô hình, tại sao người xây dựng lại phải chia dataset ra thành các tập train và test và tại sao tỉ lệ thường sử dụng là 80-20 hoặc 70-30
