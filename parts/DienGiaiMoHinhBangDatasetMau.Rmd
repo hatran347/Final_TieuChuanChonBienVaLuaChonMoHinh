@@ -1,0 +1,287 @@
+------------------------------------------------------------------------
+
+editor_options: markdown: wrap: 72 ---
+
+### Forward Selection
+
+```{r}
+# Forward selection
+null_model <- lm(target ~ 1, data = train_data)
+
+forward_model <- step(
+  null_model,
+  scope = list(lower = null_model, upper = full_model),
+  direction = "forward",
+  trace = TRUE
+)
+
+
+summary_forward <- summary(forward_model)
+
+
+adj_r2 <- summary_forward$adj.r.squared #R2 adj
+
+# Mallows' Cp
+rss_forward <- sum(residuals(forward_model)^2) #RSS
+sigma2_full <- summary(full_model)$sigma^2 #phuong sai
+n <- nrow(train_data)
+p_forward <- length(coef(forward_model)) 
+# Cp = RSS / sigma2_full - (n - 2p)
+cp_forward <- rss_forward / sigma2_full - (n - 2 * p_forward)
+
+
+cat("Forward selection model:\n")
+cat("Adjusted R-squared:", round(adj_r2, 4), "\n")
+cat("Mallows' Cp:", round(cp_forward, 4), "\n")
+cat("AIC:", round(AIC(forward_model), 2), "\n")
+cat("BIC:", round(BIC(forward_model), 2), "\n")
+
+summary_forward
+```
+
+### Backward Elimination
+
+```{r}
+backward_model <- step(
+  full_model,
+  direction = "backward",
+  trace = TRUE
+)
+
+summary_backward <- summary(backward_model)
+
+adj_r2_backward <- summary_backward$adj.r.squared # R2 adj
+
+# Mallows' Cp
+rss_backward <- sum(residuals(backward_model)^2) # RSS
+sigma2_full <- summary(full_model)$sigma^2 # phương sai từ full model
+n <- nrow(train_data)
+p_backward <- length(coef(backward_model)) # số tham số, bao gồm intercept
+
+# Cp = RSS / sigma2_full - (n - 2p)
+cp_backward <- rss_backward / sigma2_full - (n - 2 * p_backward)
+
+cat("Backward selection model:\n")
+cat("Adjusted R-squared:", round(adj_r2_backward, 4), "\n")
+cat("Mallows' Cp:", round(cp_backward, 4), "\n")
+cat("AIC:", round(AIC(backward_model), 2), "\n")
+cat("BIC:", round(BIC(backward_model), 2), "\n")
+
+summary_backward
+```
+
+### Stepwise selection
+
+```{r}
+
+stepwise_model <- step(
+  null_model,
+  scope = list(lower = null_model, upper = full_model),
+  direction = "both",
+  trace = TRUE
+)
+
+
+summary(stepwise_model)
+
+# Tính Adj R-squared và Mallows' Cp
+summary_stepwise <- summary(stepwise_model)
+adj_r2_stepwise <- summary_stepwise$adj.r.squared
+
+# Mallows' Cp
+rss_stepwise <- sum(residuals(stepwise_model)^2)
+sigma2_full <- summary(full_model)$sigma^2
+n <- nrow(train_data)
+p_stepwise <- length(coef(stepwise_model))
+cp_stepwise <- rss_stepwise / sigma2_full - (n - 2 * p_stepwise)
+
+# In kết quả
+cat("\nStepwise selection model:\n")
+cat("Adjusted R-squared:", round(adj_r2_stepwise, 4), "\n")
+cat("Mallows' Cp:", round(cp_stepwise, 4), "\n")
+cat("AIC:", round(AIC(stepwise_model), 2), "\n")
+cat("BIC:", round(BIC(stepwise_model), 2), "\n")
+```
+
+### Lựa chọn mô hình
+
+```{r, echo=FALSE}
+formula_bic <- as.formula(paste("target ~", paste(vars_bic, collapse = " + ")))
+formula_adjr2 <- as.formula(paste("target ~", paste(vars_adjr2, collapse = " + ")))
+formula_cp <- as.formula(paste("target ~", paste(vars_cp, collapse = " + ")))
+
+model_bic <- lm(formula_bic, data = train_data)
+model_adjr2 <- lm(formula_adjr2, data = train_data)
+model_cp <- lm(formula_cp, data = train_data)
+
+compare_models <- data.frame(
+  Method = c(
+    "Full model",
+    "Best subset theo BIC",
+    "Best subset theo Adjusted R2",
+    "Best subset theo Cp",
+    "Forward AIC",
+    "Backward AIC",
+    "Stepwise AIC"
+  ),
+  
+  Predictors = c(
+    paste(names(coef(full_model))[-1], collapse = ", "),
+    paste(vars_bic, collapse = ", "),
+    paste(vars_adjr2, collapse = ", "),
+    paste(vars_cp, collapse = ", "),
+    paste(names(coef(forward_model))[-1], collapse = ", "),
+    paste(names(coef(backward_model))[-1], collapse = ", "),
+    paste(names(coef(stepwise_model))[-1], collapse = ", ")
+  ),
+  
+  Num_predictors = c(
+    length(coef(full_model)) - 1,
+    length(vars_bic),
+    length(vars_adjr2),
+    length(vars_cp),
+    length(coef(forward_model)) - 1,
+    length(coef(backward_model)) - 1,
+    length(coef(stepwise_model)) - 1
+  ),
+  
+  AIC = c(
+    AIC(full_model),
+    AIC(model_bic),
+    AIC(model_adjr2),
+    AIC(model_cp),
+    AIC(forward_model),
+    AIC(backward_model),
+    AIC(stepwise_model)
+  ),
+  
+  BIC = c(
+    BIC(full_model),
+    BIC(model_bic),
+    BIC(model_adjr2),
+    BIC(model_cp),
+    BIC(forward_model),
+    BIC(backward_model),
+    BIC(stepwise_model)
+  ),
+  
+  Adj_R2 = c(
+    summary(full_model)$adj.r.squared,
+    summary(model_bic)$adj.r.squared,
+    summary(model_adjr2)$adj.r.squared,
+    summary(model_cp)$adj.r.squared,
+    summary(forward_model)$adj.r.squared,
+    summary(backward_model)$adj.r.squared,
+    summary(stepwise_model)$adj.r.squared
+  )
+)
+
+compare_models
+```
+
+```{r}
+final_model <- stepwise_model
+
+summary(final_model)
+```
+
+```{r}
+# So sánh mô hình rút gọn và mô hình đầy đủ bằng partial F-test
+
+# Mô hình đầy đủ
+full_model <- lm(target ~ ., data = train_data)
+
+# Mô hình rút gọn
+reduced_model <- final_model
+
+nested_test <- anova(reduced_model, full_model)
+
+nested_test
+```
+
+Kiểm định F được sử dụng để so sánh mô hình rút gọn và mô hình đầy đủ:
+
+$$H_0: \beta_{age} = \beta_{hdl} = \beta_{tch} = 0$$
+
+$$H_1: \text{Có ít nhất một hệ số trong } \beta_{age}, \beta_{hdl}, \beta_{tch} \text{ khác } 0$$
+
+Trong đó, $H_0$ cho rằng ba biến bị loại khỏi mô hình rút gọn gồm `age`, `hdl` và `tch` không đóng góp đáng kể vào khả năng giải thích của mô hình. Ngược lại, $H_1$ cho rằng ít nhất một trong ba biến này có đóng góp đáng kể, nên mô hình đầy đủ phù hợp hơn mô hình rút gọn.
+
+Kết quả kiểm định cho p-value = 0.9904 \> 0.05, do đó không bác bỏ $H_0$. Điều này cho thấy việc thêm các biến `age`, `hdl` và `tch` vào mô hình không làm cải thiện mô hình một cách có ý nghĩa thống kê. Vì vậy, mô hình rút gọn được ưu tiên do đơn giản hơn nhưng không kém mô hình đầy đủ về mặt thống kê.
+
+## Kiểm chứng chéo Cross - Validation
+
+### Train set
+
+```{r, echo=FALSE}
+
+
+final_formula <- formula(final_model)
+
+# Train error:
+pred_train <- predict(final_model, newdata = train_data)
+
+train_MSE <- mean((train_data$target - pred_train)^2)
+train_RMSE <- sqrt(train_MSE)
+train_MAE <- mean(abs(train_data$target - pred_train))
+
+train_R2 <- 1 - sum((train_data$target - pred_train)^2) /sum((train_data$target - mean(train_data$target))^2)
+
+#  LOOVE
+glm_final <- glm(final_formula, data = df)
+
+loocv_result <- cv.glm(df, glm_final)
+
+LOOCV_MSE <- loocv_result$delta[1]
+LOOCV_RMSE <- sqrt(LOOCV_MSE)
+
+# 5-FOLD
+set.seed(347)
+
+kfold_result <- cv.glm(df, glm_final, K = 5)
+
+KFold_MSE <- kfold_result$delta[1]
+KFold_RMSE <- sqrt(KFold_MSE)
+
+train_results <- data.frame(
+  Method = c("Train error", "LOOCV", "5-Fold CV"),
+  MSE = c(train_MSE, LOOCV_MSE, KFold_MSE),
+  RMSE = c(train_RMSE, LOOCV_RMSE, KFold_RMSE),
+  MAE = c(train_MAE, NA, NA),
+  R2 = c(train_R2, NA, NA)
+)
+
+train_results
+
+```
+
+Kết quả đánh giá trên tập huấn luyện cho thấy sai số huấn luyện của mô hình cuối cùng có RMSE khoảng 53.96 và MAE khoảng 43.31. Khi sử dụng các phương pháp kiểm chứng chéo, RMSE tăng nhẹ lên khoảng 54.52 đối với LOOCV và 54.84 đối với 5-Fold CV. Điều này là hợp lý vì kiểm chứng chéo đánh giá mô hình trên các phần dữ liệu không được dùng để huấn luyện tại từng lượt, nên sai số thường cao hơn train error.
+
+Sự chênh lệch giữa RMSE của train error và RMSE của LOOCV/5-Fold CV không quá lớn, cho thấy mô hình không có dấu hiệu quá khớp nghiêm trọng trên tập huấn luyện. Ngoài ra, kết quả LOOCV và 5-Fold CV khá gần nhau, chứng tỏ ước lượng sai số của mô hình tương đối ổn định.
+
+### Test set
+
+```{r}
+pred_test <- predict(final_model, newdata = test_data)
+
+test_MSE <- mean((test_data$target - pred_test)^2)
+test_RMSE <- sqrt(test_MSE)
+test_MAE <- mean(abs(test_data$target - pred_test))
+
+test_R2 <- 1 - sum((test_data$target - pred_test)^2) /
+  sum((test_data$target - mean(test_data$target))^2)
+
+test_results <- data.frame(
+  Method = "Test error",
+  MSE = test_MSE,
+  RMSE = test_RMSE,
+  MAE = test_MAE,
+  R2 = test_R2
+)
+
+test_results
+```
+
+Trên tập test, mô hình cuối cùng đạt MSE = 2761.934, RMSE = 52.5541, MAE = 43.7567 và Test $R^2 = 0.5401$. Điều này cho thấy sai số dự báo trung bình của mô hình vào khoảng 52.55 đơn vị nếu xét theo RMSE, và khoảng 43.76 đơn vị nếu xét theo MAE.
+
+Giá trị Test $R^2 = 0.5401$ cho thấy mô hình giải thích được khoảng 54.01% biến thiên của `target` trên dữ liệu chưa được sử dụng trong quá trình huấn luyện. So với kết quả trên tập train, RMSE trên test không cao hơn mà còn thấp hơn nhẹ, cho thấy mô hình có khả năng khái quát hóa tương đối tốt và chưa có dấu hiệu quá khớp nghiêm trọng.

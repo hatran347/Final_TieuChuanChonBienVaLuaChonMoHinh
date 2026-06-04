@@ -1,0 +1,126 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Dữ liệu và thiết lập thực nghiệm
+
+## Quy trình thực hiện
+
+
+
+Quy trình thực nghiệm được thực hiện theo các bước sau:
+
+• EDA dữ liệu trên toàn bộ dataset.
+
+• Chia data thành train và test (validation set), thực hiện xây dựng mô hình hồi quy tuyến tính và các phân tích trên tập train,
+
+• Áp dụng các tiêu chuẩn lựa chọn biến gồm Adjusted $R^2$, Mallows' $C_p$, AIC và BIC.
+
+• Thực hiện các thủ tục lựa chọn biến gồm Forward Selection, Backward Elimination và Stepwise Selection.
+
+• So sánh các mô hình thu được từ các phương pháp lựa chọn biến.
+
+• Đánh giá khả năng dự báo trên tập test thông qua RMSE, MAE và test $R^2$.
+
+• Lựa chọn mô hình cuối cùng và đưa ra nhận xét.
+
+## EDA
+
+```{r, echo=FALSE}
+library(lars)
+library(leaps)
+library(boot)
+library(scales)
+library(corrplot)
+library(ggplot2)
+library(tidyr)
+library(tidyverse)
+
+```
+
+```{r}
+data(diabetes)
+df <- as.data.frame(cbind(diabetes$x, target = diabetes$y))
+summary(df)
+```
+
+Bộ dữ liệu gồm 10 biến giải thích và 1 biến phụ thuộc `target`. Các biến giải thích đã được chuẩn hóa nên có giá trị trung bình xấp xỉ 0. Biến `target` dao động từ 25 đến 346, với trung bình khoảng 152.1, cho thấy mức độ tiến triển bệnh tiểu đường có sự khác biệt đáng kể giữa các bệnh nhân.
+
+Trước khi lựa chọn biến, báo cáo tiến hành khám phá dữ liệu để quan sát mối quan hệ giữa biến phụ thuộc `target` và các biến giải thích
+
+```{r}
+
+df %>%
+  pivot_longer(cols = -target, names_to = "variable", values_to = "value") %>%
+  ggplot(aes(x = value, y = target)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ variable, scales = "free_x") +
+  labs(
+    title = "Quan hệ giữa các biến của mô hình và target",
+    x = "Biến",
+    y = "target"
+  )
+```
+
+Từ các biểu đồ phân tán ở trên có thể thấy các biến `bmi`, `ltg`, `map` và `glu` có xu hướng tăng cùng với `target`, trong khi `hdl` có xu hướng giảm khi `target` tăng. Trong số đó, mối quan hệ của `bmi` và `ltg` với `target` thể hiện khá rõ qua dạng phân bố của các điểm dữ liệu.
+
+Các biến `age`, `ldl`, `tc` và `tch` cũng cho thấy xu hướng đồng biến với `target`, tuy nhiên mức độ không rõ bằng các biến trên. Riêng biến `sex` gần như không thể hiện mối quan hệ tuyến tính đáng kể với `target` khi xét riêng lẻ.
+
+Nhìn chung, các scatter plots giúp nhận diện sơ bộ những biến có khả năng ảnh hưởng đến `target` trước khi tiến hành xây dựng và lựa chọn mô hình hồi quy.
+
+```{r}
+
+cor_matrix <- cor(df)
+
+corrplot(
+  cor_matrix,
+  method = "color",
+  type = "upper",
+  tl.cex = 0.8,
+  addCoef.col = "black",
+  number.cex = 0.6
+)
+```
+
+Ma trận tương quan cho thấy biến target có tương quan dương tương đối rõ
+với các biến bmi, map, tc, ldl, tch, ltg, glu. Trong đó, ltg và bmi là hai biến
+có tương quan cao nhất với target. Ngược lại, hdl có tương quan âm với
+target, còn sex gần như không có tương quan tuyến tính đơn biến với
+target.
+
+Một số cặp biến độc lập có tương quan cao, đặc biệt là tc-ldl,hdl-tch, ldl-tch, tch-ltg cho
+thấy có thể tồn tại hiện tượng đa cộng tuyến. Do đó, việc lựa chọn biến
+là cần thiết để xây dựng mô hình gọn hơn, tránh sử dụng nhiều biến mang
+thông tin trùng lặp.
+
+
+## Xây dựng mô hình hồi quy tuyến tính đầy đủ biến
+
+Để đánh giá các phương pháp lựa chọn biến và lựa chọn mô hình, bộ dữ liệu được chia thành hai phần: tập huấn luyện (train) và tập kiểm tra (test) theo tỷ lệ 80:20. Tập train được sử dụng để xây dựng mô hình và thực hiện lựa chọn biến, trong khi tập test được dùng để đánh giá khả năng dự báo của các mô hình sau khi lựa chọn.
+
+```{r}
+set.seed(347)
+
+# Chia train:test theo tỉ lệ 80:20
+train_index <- sample(1:nrow(df), size = 0.8 * nrow(df))
+
+train_data <- df[train_index, ]
+test_data  <- df[-train_index, ]
+
+dim(train_data)
+dim(test_data)
+```
+
+```{r}
+full_model <- lm(target ~ ., data = train_data)
+
+summary(full_model)
+```
+Mô hình hồi quy đầy đủ có ý nghĩa thống kê tổng thể với p-value của kiểm định F nhỏ hơn 2.2e-16. Giá trị $R^2 = 0.5075$ cho thấy mô hình giải thích được khoảng 50.75% biến thiên của `target`, trong khi $R^2_{adj} = 0.4931$ cho thấy sau khi điều chỉnh theo số lượng biến, tỷ lệ giải thích còn khoảng 49.31%.
+
+Xét từng biến giải thích, `sex`, `bmi`, `map` và `ltg` có ý nghĩa thống kê ở mức 5%. Trong đó, `bmi`, `map` và `ltg` có ảnh hưởng cùng chiều đến `target`, còn `sex` có ảnh hưởng ngược chiều. Các biến còn lại có p-value lớn hơn 0.05 nên chưa có đủ bằng chứng để khẳng định ảnh hưởng riêng lẻ của chúng trong mô hình khi đã xét đồng thời các biến khác.
+
+Mặc dù mô hình đầy đủ sử dụng toàn bộ 10 biến giải thích, chỉ một số biến thực sự có ý nghĩa thống kê. Điều này cho thấy mô hình có thể chứa những biến không cần thiết. Vì vậy, các phương pháp lựa chọn biến sẽ được áp dụng ở các phần tiếp theo nhằm tìm ra mô hình gọn hơn nhưng vẫn đảm bảo khả năng giải thích và dự báo.
+

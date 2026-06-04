@@ -1,0 +1,26 @@
+---
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+# Giới thiệu
+
+Trong hồi quy tuyến tính bội, số lượng biến giải thích được đưa vào mô
+hình có ảnh hưởng trực tiếp đến kết quả ước lượng và khả năng dự báo.
+Việc bổ sung thêm biến thường làm mô hình khớp với dữ liệu tốt hơn, thể
+hiện qua sự gia tăng của $R^2$ hoặc sự giảm của SSE. Tuy nhiên, một mô
+hình có quá nhiều biến có thể trở nên phức tạp, khó diễn giải và dễ xảy
+ra hiện tượng quá khớp (Overfitting).
+
+Vì vậy, thay vì sử dụng toàn bộ các biến sẵn có, cần lựa chọn một tập
+biến phù hợp để xây dựng mô hình. Quá trình này thường dựa trên các tiêu
+chuẩn đánh giá như Adjusted $R^2$, Mallows' $C_p$, AIC và BIC, kết hợp
+với các thủ tục lựa chọn biến như Forward Selection, Backward
+Elimination và Stepwise Selection.
+
+Để minh họa các phương pháp trên, báo cáo sử dụng bộ dữ liệu `diabetes`
+trong R. Bộ dữ liệu gồm 442 quan sát với 10 biến giải thích và một biến
+target biểu thị mức độ tiến triển của bệnh tiểu đường. Trên bộ dữ liệu
+này, các phương pháp lựa chọn biến sẽ được áp dụng và so sánh nhằm tìm
+ra mô hình phù hợp cho bài toán dự báo.

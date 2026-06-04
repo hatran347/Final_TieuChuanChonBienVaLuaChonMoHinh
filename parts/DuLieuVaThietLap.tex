@@ -1,0 +1,350 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+
+\section{Dữ liệu và thiết lập thực
+nghiệm}\label{dux1eef-liux1ec7u-vuxe0-thiux1ebft-lux1eadp-thux1ef1c-nghiux1ec7m}
+
+\subsection{Quy trình thực hiện}\label{quy-truxecnh-thux1ef1c-hiux1ec7n}
+
+Quy trình thực nghiệm được thực hiện theo các bước sau:
+
+• EDA dữ liệu trên toàn bộ dataset.
+
+• Chia data thành train và test (validation set), thực hiện xây dựng mô
+hình hồi quy tuyến tính và các phân tích trên tập train,
+
+• Áp dụng các tiêu chuẩn lựa chọn biến gồm Adjusted \(R^2\), Mallows'
+\(C_p\), AIC và BIC.
+
+• Thực hiện các thủ tục lựa chọn biến gồm Forward Selection, Backward
+Elimination và Stepwise Selection.
+
+• So sánh các mô hình thu được từ các phương pháp lựa chọn biến.
+
+• Đánh giá khả năng dự báo trên tập test thông qua RMSE, MAE và test
+\(R^2\).
+
+• Lựa chọn mô hình cuối cùng và đưa ra nhận xét.
+
+\subsection{EDA}\label{eda}
+
+\begin{verbatim}
+## Loaded lars 1.3
+\end{verbatim}
+
+\begin{verbatim}
+## corrplot 0.95 loaded
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{data}\NormalTok{(diabetes)}
+\NormalTok{df }\OtherTok{\textless{}{-}} \FunctionTok{as.data.frame}\NormalTok{(}\FunctionTok{cbind}\NormalTok{(diabetes}\SpecialCharTok{$}\NormalTok{x, }\AttributeTok{target =}\NormalTok{ diabetes}\SpecialCharTok{$}\NormalTok{y))}
+\FunctionTok{summary}\NormalTok{(df)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##       age                 sex                bmi                 map           
+##  Min.   :-0.107226   Min.   :-0.04464   Min.   :-0.090275   Min.   :-0.112400  
+##  1st Qu.:-0.037299   1st Qu.:-0.04464   1st Qu.:-0.034229   1st Qu.:-0.036656  
+##  Median : 0.005383   Median :-0.04464   Median :-0.007284   Median :-0.005671  
+##  Mean   : 0.000000   Mean   : 0.00000   Mean   : 0.000000   Mean   : 0.000000  
+##  3rd Qu.: 0.038076   3rd Qu.: 0.05068   3rd Qu.: 0.031248   3rd Qu.: 0.035644  
+##  Max.   : 0.110727   Max.   : 0.05068   Max.   : 0.170555   Max.   : 0.132044  
+##        tc                 ldl                 hdl           
+##  Min.   :-0.126781   Min.   :-0.115613   Min.   :-0.102307  
+##  1st Qu.:-0.034248   1st Qu.:-0.030358   1st Qu.:-0.035117  
+##  Median :-0.004321   Median :-0.003819   Median :-0.006584  
+##  Mean   : 0.000000   Mean   : 0.000000   Mean   : 0.000000  
+##  3rd Qu.: 0.028358   3rd Qu.: 0.029844   3rd Qu.: 0.029312  
+##  Max.   : 0.153914   Max.   : 0.198788   Max.   : 0.181179  
+##       tch                 ltg                 glu                target     
+##  Min.   :-0.076395   Min.   :-0.126097   Min.   :-0.137767   Min.   : 25.0  
+##  1st Qu.:-0.039493   1st Qu.:-0.033249   1st Qu.:-0.033179   1st Qu.: 87.0  
+##  Median :-0.002592   Median :-0.001948   Median :-0.001078   Median :140.5  
+##  Mean   : 0.000000   Mean   : 0.000000   Mean   : 0.000000   Mean   :152.1  
+##  3rd Qu.: 0.034309   3rd Qu.: 0.032433   3rd Qu.: 0.027917   3rd Qu.:211.5  
+##  Max.   : 0.185234   Max.   : 0.133599   Max.   : 0.135612   Max.   :346.0
+\end{verbatim}
+
+Bộ dữ liệu gồm 10 biến giải thích và 1 biến phụ thuộc \texttt{target}.
+Các biến giải thích đã được chuẩn hóa nên có giá trị trung bình xấp xỉ
+0. Biến \texttt{target} dao động từ 25 đến 346, với trung bình khoảng
+152.1, cho thấy mức độ tiến triển bệnh tiểu đường có sự khác biệt đáng
+kể giữa các bệnh nhân.
+
+Trước khi lựa chọn biến, báo cáo tiến hành khám phá dữ liệu để quan sát
+mối quan hệ giữa biến phụ thuộc \texttt{target} và các biến giải thích
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(tidyr)}
+
+\NormalTok{df }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pivot\_longer}\NormalTok{(}\AttributeTok{cols =} \SpecialCharTok{{-}}\NormalTok{target, }\AttributeTok{names\_to =} \StringTok{"variable"}\NormalTok{, }\AttributeTok{values\_to =} \StringTok{"value"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ value, }\AttributeTok{y =}\NormalTok{ target)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.5}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_smooth}\NormalTok{(}\AttributeTok{method =} \StringTok{"lm"}\NormalTok{, }\AttributeTok{se =} \ConstantTok{FALSE}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ variable, }\AttributeTok{scales =} \StringTok{"free\_x"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Quan hệ giữa các biến của mô hình và target"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{"Biến"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"target"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `geom_smooth()` using formula = 'y ~ x'
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{DuLieuVaThietLap_files/DuLieuVaThietLap_files/figure-latex/unnamed-chunk-3-1.pdf}}
+
+Từ các biểu đồ phân tán ở trên có thể thấy các biến \texttt{bmi},
+\texttt{ltg}, \texttt{map} và \texttt{glu} có xu hướng tăng cùng với
+\texttt{target}, trong khi \texttt{hdl} có xu hướng giảm khi
+\texttt{target} tăng. Trong số đó, mối quan hệ của \texttt{bmi} và
+\texttt{ltg} với \texttt{target} thể hiện khá rõ qua dạng phân bố của
+các điểm dữ liệu.
+
+Các biến \texttt{age}, \texttt{ldl}, \texttt{tc} và \texttt{tch} cũng
+cho thấy xu hướng đồng biến với \texttt{target}, tuy nhiên mức độ không
+rõ bằng các biến trên. Riêng biến \texttt{sex} gần như không thể hiện
+mối quan hệ tuyến tính đáng kể với \texttt{target} khi xét riêng lẻ.
+
+Nhìn chung, các scatter plots giúp nhận diện sơ bộ những biến có khả
+năng ảnh hưởng đến \texttt{target} trước khi tiến hành xây dựng và lựa
+chọn mô hình hồi quy.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cor\_matrix }\OtherTok{\textless{}{-}} \FunctionTok{cor}\NormalTok{(df)}
+
+\FunctionTok{corrplot}\NormalTok{(}
+\NormalTok{  cor\_matrix,}
+  \AttributeTok{method =} \StringTok{"color"}\NormalTok{,}
+  \AttributeTok{type =} \StringTok{"upper"}\NormalTok{,}
+  \AttributeTok{tl.cex =} \FloatTok{0.8}\NormalTok{,}
+  \AttributeTok{addCoef.col =} \StringTok{"black"}\NormalTok{,}
+  \AttributeTok{number.cex =} \FloatTok{0.6}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{DuLieuVaThietLap_files/DuLieuVaThietLap_files/figure-latex/unnamed-chunk-4-1.pdf}}
+
+Ma trận tương quan cho thấy biến target có tương quan dương tương đối rõ
+với các biến bmi, map, tc, ldl, tch, ltg, glu. Trong đó, ltg và bmi là
+hai biến có tương quan cao nhất với target. Ngược lại, hdl có tương quan
+âm với target, còn sex gần như không có tương quan tuyến tính đơn biến
+với target.
+
+Một số cặp biến độc lập có tương quan cao, đặc biệt là tc-ldl,hdl-tch,
+ldl-tch, tch-ltg cho thấy có thể tồn tại hiện tượng đa cộng tuyến. Do
+đó, việc lựa chọn biến là cần thiết để xây dựng mô hình gọn hơn, tránh
+sử dụng nhiều biến mang thông tin trùng lặp.
+
+\subsection{Xây dựng mô hình hồi quy tuyến tính đầy đủ
+biến}\label{xuxe2y-dux1ef1ng-muxf4-huxecnh-hux1ed3i-quy-tuyux1ebfn-tuxednh-ux111ux1ea7y-ux111ux1ee7-biux1ebfn}
+
+Để đánh giá các phương pháp lựa chọn biến và lựa chọn mô hình, bộ dữ
+liệu được chia thành hai phần: tập huấn luyện (train) và tập kiểm tra
+(test) theo tỷ lệ 80:20. Tập train được sử dụng để xây dựng mô hình và
+thực hiện lựa chọn biến, trong khi tập test được dùng để đánh giá khả
+năng dự báo của các mô hình sau khi lựa chọn.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{347}\NormalTok{)}
+
+\CommentTok{\# Chia train:test theo tỉ lệ 80:20}
+\NormalTok{train\_index }\OtherTok{\textless{}{-}} \FunctionTok{sample}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\FunctionTok{nrow}\NormalTok{(df), }\AttributeTok{size =} \FloatTok{0.8} \SpecialCharTok{*} \FunctionTok{nrow}\NormalTok{(df))}
+
+\NormalTok{train\_data }\OtherTok{\textless{}{-}}\NormalTok{ df[train\_index, ]}
+\NormalTok{test\_data  }\OtherTok{\textless{}{-}}\NormalTok{ df[}\SpecialCharTok{{-}}\NormalTok{train\_index, ]}
+
+\FunctionTok{dim}\NormalTok{(train\_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 353  11
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{dim}\NormalTok{(test\_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 89 11
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{full\_model }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(target }\SpecialCharTok{\textasciitilde{}}\NormalTok{ ., }\AttributeTok{data =}\NormalTok{ train\_data)}
+
+\FunctionTok{summary}\NormalTok{(full\_model)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = target ~ ., data = train_data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -153.361  -37.612   -1.205   37.236  148.804 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  153.437      2.923  52.495  < 2e-16 ***
+## age           12.981     68.640   0.189 0.850109    
+## sex         -255.072     68.749  -3.710 0.000242 ***
+## bmi          478.669     75.547   6.336 7.43e-10 ***
+## map          355.903     73.341   4.853 1.85e-06 ***
+## tc          -749.672    495.989  -1.511 0.131592    
+## ldl          497.297    398.898   1.247 0.213369    
+## hdl           55.853    250.479   0.223 0.823680    
+## tch           52.106    188.380   0.277 0.782254    
+## ltg          766.194    196.771   3.894 0.000119 ***
+## glu          109.987     73.685   1.493 0.136449    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 54.82 on 342 degrees of freedom
+## Multiple R-squared:  0.5075, Adjusted R-squared:  0.4931 
+## F-statistic: 35.24 on 10 and 342 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+Mô hình hồi quy đầy đủ có ý nghĩa thống kê tổng thể với p-value của kiểm
+định F nhỏ hơn 2.2e-16. Giá trị \(R^2 = 0.5075\) cho thấy mô hình giải
+thích được khoảng 50.75\% biến thiên của \texttt{target}, trong khi
+\(R^2_{adj} = 0.4931\) cho thấy sau khi điều chỉnh theo số lượng biến,
+tỷ lệ giải thích còn khoảng 49.31\%.
+
+Xét từng biến giải thích, \texttt{sex}, \texttt{bmi}, \texttt{map} và
+\texttt{ltg} có ý nghĩa thống kê ở mức 5\%. Trong đó, \texttt{bmi},
+\texttt{map} và \texttt{ltg} có ảnh hưởng cùng chiều đến
+\texttt{target}, còn \texttt{sex} có ảnh hưởng ngược chiều. Các biến còn
+lại có p-value lớn hơn 0.05 nên chưa có đủ bằng chứng để khẳng định ảnh
+hưởng riêng lẻ của chúng trong mô hình khi đã xét đồng thời các biến
+khác.
+
+Mặc dù mô hình đầy đủ sử dụng toàn bộ 10 biến giải thích, chỉ một số
+biến thực sự có ý nghĩa thống kê. Điều này cho thấy mô hình có thể chứa
+những biến không cần thiết. Vì vậy, các phương pháp lựa chọn biến sẽ
+được áp dụng ở các phần tiếp theo nhằm tìm ra mô hình gọn hơn nhưng vẫn
+đảm bảo khả năng giải thích và dự báo.
+
+\end{document}

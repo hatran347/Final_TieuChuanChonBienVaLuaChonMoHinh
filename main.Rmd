@@ -1,0 +1,81 @@
+---
+title: "Lựa chọn mô hình và lựa chọn biến"
+author:
+  - "Trần Việt Hà"
+  - "Nguyễn Đình Mai Vi"
+  - "Vũ Hà Thư"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+
+output:
+
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    latex_engine: xelatex
+    keep_tex: false
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    df_print: paged
+
+fontsize: 11pt
+geometry: margin=2.5cm
+mainfont: "Times New Roman"
+
+header-includes:
+  - \usepackage{float}
+  - \usepackage{amsmath}
+  - \usepackage{amssymb}
+  - \usepackage{booktabs}
+
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+
+
+```{r setup, include=FALSE}
+# Render Unicode (Vietnamese) text in plots correctly.
+# The default pdf() device cannot draw Vietnamese diacritics, and cairo_pdf
+# is unavailable here (needs XQuartz). showtext draws text as glyphs from a
+# system font file, so it works on the default device with full Unicode.
+library(showtext)
+times_path <- "/System/Library/Fonts/Times.ttc"
+if (file.exists(times_path)) sysfonts::font_add("Times", regular = times_path)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.showtext = TRUE
+)
+```
+
+\newpage
+
+
+```{r child="parts/DatVanDe.Rmd"}
+```
+
+```{r child="parts/DuLieuVaThietLap.Rmd"}
+```
+
+```{r child="parts/TieuChuanLuaChonBien.Rmd"}
+```
+
+```{r child="parts/PhuongPhapLuaChonMoHinh&KiemChungCheo.Rmd"}
+```
+
+
+```{r child="parts/LuaChonMoHinhVaBoostrap.Rmd"}
+```
+
+```{r child="parts/KiemChungCheo.Rmd"}
+```
+
+```{r child="parts/Tailieuthamkhao.Rmd"}
+```

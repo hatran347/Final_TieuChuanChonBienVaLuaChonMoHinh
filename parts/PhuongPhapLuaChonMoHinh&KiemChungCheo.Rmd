@@ -1,0 +1,968 @@
+------------------------------------------------------------------------
+
+editor_options: markdown: wrap: 72 ---
+
+# Các phương pháp lựa chọn mô hình
+
+Quay lại dataset `diabetes`, dataset hiện đang có $10$ biến độc lập. Vì vậy khi xem xét các mô hình, có một cách luôn mang lại một mô hình phù hợp nhất bằng cách lấy tổ hợp các biến với nhau. Như vậy, ta sẽ có tổng số mô hình như sau:
+
+$$\sum_{k=0}^{p-1} \binom{p-1}{k} = 2^{p-1} = 2^{10} = 1024$$
+
+tập hợp các mô hình khả thi. Từ những mô hình này, áp dụng các tiêu chí đánh giá mô hình phối hợp với các kiểm định giả thuyết thống kê để chọn ra mô hình tối ưu nhất.
+
+Giả sử nếu mô hình có $20$ hoặc thậm chí $30$ biến, tổng số mô hình phải chạy là rất lớn, lần lượt là $2^{20} = 1.048.576$ và $2^{30} = 1.073.741.824$ mô hình. Điều này dẫn đến gia tăng về mặt chi phí tính toán, quá tải hệ thống và tiêu tốn nhiều thời gian xử lý, khiến việc duyệt toàn bộ mô hình trở nên bất khả thi trong thực tế.
+
+Vì vậy, một cách tiếp cận tối ưu hơn là sử dụng các quy trình tìm kiếm tuần tự như Forward (chọn tiến), Backward (loại trừ lùi), hoặc Stepwise (hồi quy từng bước) để tìm kiếm không gian mô hình một hiệu quả [1].
+
+## Forward Selection (Lựa chọn tiến)
+
+### Nguyên lý hoạt động
+
+Lựa chọn tiến bắt đầu với một mô hình không chứa biến dự báo nào. Sau đó, đối với tất cả các biến độc lập chưa nằm trong mô hình, thuật toán kiểm tra giá trị $p\text{-value}$ của chúng nếu chúng được thêm vào mô hình. Biến được chọn là biến có giá trị $p\text{-value}$ thấp nhất và nhỏ hơn mức ý nghĩa đầu vào $\alpha_{\text{enter}}$ [2]. Quá trình này diễn ra liên tục cho đến khi không còn biến mới nào có thể nạp vào mô hình. Mức ý nghĩa tới hạn $\alpha_{\text{crit}}$ trong việc kiểm soát điều kiện dừng đôi khi được gọi là "p-to-remove" hoặc "p-to-enter" tùy thuộc vào thuật toán và không nhất thiết phải cố định ở mức $5\%$. Nếu mục tiêu cốt lõi là hiệu suất dự báo (prediction performance), thì việc đặt ngưỡng cắt (cutoff) từ $15\%$ đến $20\%$ có thể mang lại kết quả tốt nhất, mặc dù các phương pháp được thiết kế trực tiếp hơn cho mục đích tối ưu hóa dự báo vẫn nên được ưu tiên sử dụng [2].
+
+### Thuật toán
+
+#### Bắt đầu
+
+- Xuất phát từ mô hình rỗng (Null Model). Lúc này mô hình chỉ chứa duy nhất hệ số chặn ($\beta_0$).
+- Trạng thái mô hình: $$Y = \beta_0$$
+- Tập hợp biến trong mô hình ($S_{\text{in}}$): Rỗng ($\emptyset$).
+- Tập hợp biến ngoài mô hình ($S_{\text{out}}$): Chứa toàn bộ các biến $\{X_1, X_2, \dots, X_p\}$.
+
+#### Quy trình đi từng bước
+
+- **Bước 1: Đánh giá độc lập:**
+  - Máy tính chạy thử nghiệm độc lập từng biến $X_i$ thuộc tập $S_{\text{out}}$ bằng cách bắt cặp với mô hình hiện tại.
+  - Đo lường mức độ cải thiện mô hình của từng biến dựa trên một tiêu chuẩn định lượng cố định (ví dụ: biến làm giảm $\text{AIC}/\text{BIC}$ nhiều nhất, hoặc biến có $p\text{-value}$ nhỏ nhất).
+  - Tìm ra biến đáp ứng được tiêu chuẩn đề ra tốt nhất, gọi là $X_{\text{best}}$.
+- **Bước 2: Ra quyết định:**
+  - Nếu chỉ số của $X_{\text{best}}$ vượt qua ngưỡng kiểm định được thiết lập trước (Ví dụ: $p\text{-value} \le \alpha_{\text{enter}}$ hoặc $\Delta \text{AIC} < 0$), thì thuật toán chính thức nạp $X_{\text{best}}$ vào mô hình.
+  - Cập nhật trạng thái: Chuyển $X_{\text{best}}$ từ tập $S_{\text{out}}$ sang tập $S_{\text{in}}$.
+  - Trạng thái mô hình lúc này: $$Y = \beta_0 + \beta_{\text{best}} X_{\text{best}}$$
+- **Bước 3: Lặp lại vòng lặp:**
+  - Cố định các biến đã ở trong tập $S_{\text{in}}$. Tiếp tục thử nghiệm bắt cặp với các biến còn lại trong tập $S_{\text{out}}$ để tìm ra biến phối hợp bổ trợ tốt nhất với các biến đã được chọn từ trước.
+  - **Điều kiện dừng:** Nếu tại một bước nào đó, khi thử nạp bất kỳ biến nào còn lại ở ngoài vào mô hình mà không một biến nào thỏa mãn ngưỡng ý nghĩa thống kê, thì thuật toán dừng lại và đưa ra mô hình ở bước trước đó.
+- **Tổng số mô hình tối đa phải tính toán:**
+
+$$\text{Total}_{\text{Forward}} = p + (p-1) + (p-2) + \dots + 1 = \frac{p(p+1)}{2}$$
+
+**Áp dụng đối với dataset `diabetes`:**
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+# Data
+data(diabetes, package = "lars")
+
+df <- as.data.frame(unclass(diabetes$x))
+df$y <- diabetes$y
+
+# --- CẤU HÌNH THUẬT TOÁN FORWARD SELECTION (TUNED AIC) ---
+
+# Danh sách các biến độc lập ban đầu
+remaining_vars <- setdiff(names(df), "y")
+selected_vars <- c()
+
+# Step 0: Null Model (Mô hình chỉ có Intercept)
+null_model <- lm(y ~ 1, data = df)
+
+forward_full_path <- data.frame(
+  Step = 0,
+  Variable_Added = "Intercept",
+  AIC = extractAIC(null_model)[2] # ĐỒNG BỘ AIC TINH GỌN TẠI ĐÂY
+)
+
+step_num <- 1
+
+# Thuật toán chạy nạp dần cho đến khi nạp hết toàn bộ biến vào mô hình
+while(length(remaining_vars) > 0){
+
+  candidate_aic <- c()
+
+  # Thử thêm từng biến còn lại vào danh sách biến đã chọn
+  for(v in remaining_vars){
+
+    vars_try <- c(selected_vars, v)
+
+    form_try <- as.formula(
+      paste("y ~", paste(vars_try, collapse = " + "))
+    )
+
+    model_try <- lm(form_try, data = df)
+    candidate_aic[v] <- extractAIC(model_try)[2] # ĐỒNG BỘ AIC TINH GỌN TẠI ĐÂY
+  }
+
+  # Tìm biến mà khi THÊM VÀO sẽ thu được AIC nhỏ nhất
+  best_var <- names(which.min(candidate_aic))
+
+  # Chính thức nạp biến này vào danh sách đã chọn
+  selected_vars <- c(selected_vars, best_var)
+
+  # Loại bỏ biến vừa chọn ra khỏi danh sách biến còn lại
+  remaining_vars <- setdiff(remaining_vars, best_var)
+
+  # Ước lượng lại mô hình mới sau khi đã nạp best_var
+  best_model <- lm(
+    as.formula(
+      paste("y ~", paste(selected_vars, collapse = " + "))
+    ),
+    data = df
+  )
+
+  # Lưu lại lịch sử bước nạp biến
+  forward_full_path <- rbind(
+    forward_full_path,
+    data.frame(
+      Step = step_num,
+      Variable_Added = paste("+", best_var),
+      AIC = extractAIC(best_model)[2] 
+    )
+  )
+
+  step_num <- step_num + 1
+}
+
+# Tự động xác định bước tối ưu (AIC thấp nhất)
+best_step <- which.min(forward_full_path$AIC)
+
+forward_full_path$Optimal <- FALSE
+forward_full_path$Optimal[best_step] <- TRUE
+
+ggplot(
+  forward_full_path,
+  aes(x = Step, y = AIC)
+) +
+  geom_line(
+    color = "#2ca02c",
+    linewidth = 1.2
+  ) +
+  geom_point(
+    aes(color = Optimal),
+    size = 4
+  ) +
+  scale_color_manual(
+    values = c(
+      "TRUE" = "#d62728",    # Điểm tối ưu tô màu đỏ
+      "FALSE" = "#2ca02c"    # Các điểm khác tô màu xanh
+    ),
+    guide = "none"
+  ) +
+  geom_text(
+    aes(
+      label = Variable_Added,
+      # Căn lề nhẹ cho chữ "Intercept" ở Step 0 không bị tràn vách trái
+      hjust = ifelse(Step == 0, -0.1, 0.5) 
+    ),
+    vjust = -1.5,
+    size = 3.2,
+    fontface = "bold",
+    color = "#333333"
+  ) +
+  scale_x_continuous(
+    breaks = forward_full_path$Step
+  ) +
+  scale_y_continuous(
+    limits = c(min(forward_full_path$AIC) - 10, max(forward_full_path$AIC) + 15)
+  ) +
+  labs(
+    title = "Complete Path of Forward Selection",
+    subtitle = paste(
+      "Minimum AIC at Step",
+      best_step - 1
+    ),
+    x = "Selection Step (Null Model -> Full Model)",
+    y = "AIC"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", margin = margin(b = 5)),
+    plot.subtitle = element_text(face = "italic", margin = margin(b = 15)),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+  )
+```
+
+- **Diễn giải đường đi của Forward Selection**
+
+Biểu đồ trên trực quan hóa toàn bộ quá trình thuật toán Forward Selection (Chọn tiến) dựa trên tiêu chí tối ưu hóa chỉ AIC như sau:
+
+1.  **Điểm khởi đầu (Step 0 - Intercept):**
+    - **Trạng thái:** Thuật toán bắt đầu với một mô hình rỗng (Null Model), hoàn toàn chưa có biến độc lập nào mà chỉ chứa hệ số chặn (Intercept).
+    - **Giá trị AIC:** Tại bước này, AIC đạt mức cao nhất (2520.1). Điều này phản ánh mô hình giải thích dữ liệu rất kém và bị mất mát thông tin nhiều nhất vì chưa có sự tham gia của các biến dự báo.
+2.  **Xu hướng chuyển dịch của đường đồ thị (Từ Step 1 đến Step 6):**
+    - **Hướng đi:** Đường đồ thị có dốc xuống rõ rệt từ trái qua phải.
+    - **Ý nghĩa:** Qua mỗi bước, thuật toán sẽ duyệt qua toàn bộ các biến chưa có trong mô hình, tính toán và chọn ra duy nhất một biến giúp giảm chỉ số AIC nhiều nhất.
+    - Ở Step 1, biến bmi (Chỉ số khối cơ thể) được chọn đầu tiên, chứng tỏ đây là biến có sức mạnh giải thích lớn nhất đối với biến phụ thuộc y, kéo AIC giảm mạnh từ 2520.1 xuống 2410.5.
+    - Các bước tiếp theo lần lượt ghi nhận sự tham gia của ltg, map, hdl, sex, glu. Tốc độ giảm của AIC có xu hướng chậm lại ở các bước cuối (sex sang glu), cho thấy các biến thêm vào sau mang lại giá trị thông tin biên (marginal value) ít hơn so với các biến ban đầu.
+3.  **Điểm dừng của thuật toán:**
+    - Thuật toán sẽ tiếp tục "bước đi" và thêm biến cho đến khi đạt đến trạng thái bão hòa thông tin.
+    - **Điểm dừng tối ưu** (ở đây minh họa là Step 7 với biến tch) là vị trí mà tại đó, nếu thuật toán thêm biến nào đang nằm ngoài mô hình, giá trị AIC sẽ bị tăng lên thay vì giảm đi (do mô hình bị phạt vì quá cồng kềnh - hiện tượng Overfitting). Tại điểm này, đường đi dừng lại và mô hình ở Step 6 được chọn là mô hình tối ưu nhất.
+
+### Lựa chọn mô hình bằng phương pháp Forward Selection
+
+```{r}
+# Forward selection
+null_model <- lm(target ~ 1, data = train_data)
+
+forward_model <- step(
+  null_model,
+  scope = list(lower = null_model, upper = full_model),
+  direction = "forward",
+  trace = TRUE
+)
+
+
+summary_forward <- summary(forward_model)
+
+
+adj_r2 <- summary_forward$adj.r.squared #R2 adj
+
+# Mallows' Cp
+rss_forward <- sum(residuals(forward_model)^2) #RSS
+sigma2_full <- summary(full_model)$sigma^2 #phuong sai
+n <- nrow(train_data)
+p_forward <- length(coef(forward_model)) 
+# Cp = RSS / sigma2_full - (n - 2p)
+cp_forward <- rss_forward / sigma2_full - (n - 2 * p_forward)
+
+
+cat("Forward selection model:\n")
+cat("Adjusted R-squared:", round(adj_r2, 4), "\n")
+cat("Mallows' Cp:", round(cp_forward, 4), "\n")
+cat("AIC:", round(AIC(forward_model), 2), "\n")
+cat("BIC:", round(BIC(forward_model), 2), "\n")
+```
+Thuật toán Forward Selection bắt đầu từ mô hình chỉ gồm hệ số chặn và lần lượt bổ sung các biến làm giảm giá trị AIC nhiều nhất ở mỗi bước. Kết quả cho thấy các biến được lựa chọn theo thứ tự là `ltg`, `bmi`, `map`, `tc`, `sex`, `ldl` và `glu`. Sau khi thêm biến `glu`, việc bổ sung các biến còn lại không làm giảm AIC nên thuật toán dừng lại.
+
+Mô hình cuối cùng đạt Adjusted (R^2 = 0.4973), cho thấy mô hình giải thích được khoảng 49.73% biến thiên của biến phản hồi sau khi đã điều chỉnh theo số lượng biến. Giá trị này khá gần với mô hình đầy đủ nhưng sử dụng ít biến hơn, giúp mô hình gọn và dễ diễn giải hơn.
+
+Giá trị AIC được hiển thị trong quá trình thực hiện hàm `step()` có thể khác với giá trị AIC tính từ hàm `AIC()`. Do cách xử lý hằng số trong công thức tính AIC, vì hằng số cố định nên không ảnh hưởng đến việc lựa chọn mô hình.
+
+
+
+```{r, echo = FALSE}
+library(leaps)
+
+# =========================
+# FORWARD SELECTION
+# =========================
+
+null_model <- lm(target ~ 1, data = train_data)
+
+full_model <- lm(target ~ ., data = train_data)
+
+forward_model <- step(
+  null_model,
+  scope = list(lower = null_model, upper = full_model),
+  direction = "forward",
+  trace = FALSE
+)
+
+# =========================
+# LẤY CÁC MODEL TỪNG STEP
+# =========================
+
+step_models <- list()
+step_metrics <- data.frame()
+
+current_formula <- formula(null_model)
+
+remaining_vars <- setdiff(
+  names(train_data),
+  "target"
+)
+
+n <- nrow(train_data)
+
+sigma2_full <- summary(full_model)$sigma^2
+
+for(i in seq_along(remaining_vars)) {
+
+  # Chạy forward từng bước
+  step_fit <- step(
+    lm(current_formula, data = train_data),
+    scope = list(
+      lower = null_model,
+      upper = full_model
+    ),
+    direction = "forward",
+    steps = 1,
+    trace = FALSE
+  )
+
+  current_formula <- formula(step_fit)
+
+  step_models[[i]] <- step_fit
+
+  # =========================
+  # METRICS
+  # =========================
+
+  summary_fit <- summary(step_fit)
+
+  rss <- sum(residuals(step_fit)^2)
+
+  p <- length(coef(step_fit))
+
+  adj_r2 <- summary_fit$adj.r.squared
+
+  aic <- AIC(step_fit)
+
+  bic <- BIC(step_fit)
+
+  # Mallows Cp
+  cp <- rss / sigma2_full - (n - 2 * p)
+
+
+  step_metrics <- rbind(
+    step_metrics,
+    data.frame(
+      Step = i,
+      Formula = deparse(formula(step_fit)),
+      Adj_R2 = adj_r2,
+      AIC = aic,
+      BIC = bic,
+      Cp = cp
+    )
+  )
+}
+
+# =========================
+# KẾT QUẢ
+# =========================
+
+knitr::kable(
+  step_metrics,
+  digits = 4,
+  caption = "Kết quả qua từng bước của Forward Selection"
+)
+```
+
+Bảng trên trình bày các mô hình thu được ở từng bước của thuật toán Forward Selection cùng với các chỉ tiêu đánh giá gồm Adjusted (R^2), AIC, BIC và Mallows' (C_p). Các bước 8–10 cho kết quả trùng lặp với bước 7 do thuật toán không còn tìm được biến nào giúp cải thiện tiêu chuẩn lựa chọn, vì vậy mô hình giữ nguyên từ bước 7 trở đi.
+
+### Phân tích ưu và nhược điểm
+
+#### Ưu điểm
+
+- Hiệu suất tính toán cao: So với phương pháp tìm kiếm tất cả các tập con, Forward Selection giảm thiểu đáng kể chi phí xử lý dữ liệu, giúp tối ưu hóa thời gian xử lý khi số lượng biến lớn.
+
+#### Nhược điểm
+
+- Bẫy "tối ưu cục bộ": Forward Selection ở mỗi bước chỉ chọn biến mang lại cải thiện tốt nhất tại thời điểm đó. Phương pháp này không có cơ chế xem xét lại các biến đã được chọn. Vì vậy, một biến sau khi được đưa vào mô hình sẽ tiếp tục được giữ lại, ngay cả khi ở các bước sau nó trở nên kém cần thiết hoặc trùng lặp thông tin với các biến mới.
+
+- Bỏ sót các tương tác ẩn: Ở giai đoạn đầu, thuật toán thường đánh giá từng biến một cách riêng lẻ. Do đó, nó có thể bỏ qua những cặp biến hoặc nhóm biến có khả năng giải thích tốt khi được xét cùng nhau, nhưng lại thể hiện tác động yếu nếu xét riêng từng biến.
+
+## Backward Elimination (Loại trừ lùi)
+
+### Nguyên lý hoạt động:
+
+Bắt đầu với một mô hình chứa đầy đủ tất cả các biến độc lập (predictors), sau đó loại bỏ biến có giá trị $p\text{-value}$ cao nhất và lớn hơn mức ý nghĩa $\alpha_{\text{crit}}$ (hoặc $\alpha_{\text{remove}}$). Tiếp theo, mô hình được tái ước lượng (refit) và tiếp tục loại bỏ biến ít có ý nghĩa thống kê nhất còn lại, với điều kiện giá trị $p\text{-value}$ của nó vẫn lớn hơn $\alpha_{\text{crit}}$. Như vậy, tất cả các biến "không có ý nghĩa thống kê" cũng sẽ bị loại bỏ và quy trình lựa chọn sẽ hoàn tất [tham khảo sách Faraway, J. J. (2015). Linear Models with R (2nd ed.) chương 10, mục 10.2 trang 151 ]
+
+### Thuật toán:
+
+#### Bắt đầu
+
+- Xuất phát với mô hình đầy đủ (Full Model). Lúc này mô hình lấy tất cả các biến độc lập cùng một lúc.
+- Trạng thái mô hình:
+
+$$Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_p X_p$$
+
+- Tập hợp biến trong mô hình ($S_{\text{in}}$): Chứa tất cả các biến $\{X_1, X_2, \dots, X_p\}$.
+
+- Tập hợp biến đã bị loại ($S_{\text{out}}$): Rỗng ($\emptyset$).
+
+- **Bước 1: Đánh giá độc lập:**
+
+  - Máy tính chạy thử nghiệm độc lập từng biến $X_i$ thuộc tập $S_{\text{out}}$ bằng cách bắt cặp với mô hình hiện tại.
+
+#### Quy trình đi từng bước
+
+- **Bước 1: Đánh giá tập thể:**
+  - Chạy mô hình hồi quy với toàn bộ các biến đang có mặt trong tập $S_{\text{in}}$.
+  - Rà soát chỉ số đóng góp của từng biến số trong mối tương quan với các biến còn lại (thường dựa vào p-value của kiểm định t).
+  - Tìm ra biến có đóng góp thấp nhất (theo giả thuyết đặt ra ban đầu), gọi là $X_{\text{worst}}$.
+- **Bước 2: Ra quyết định:**
+  - Nếu chỉ số của $X_{\text{worst}}$ vi phạm ngưỡng an toàn ($p\text{-value} > \alpha_{\text{crit}}$), thì thuật toán xoá bỏ $X_{\text{worst}}$ ra khỏi mô hình.
+  - Cập nhật trạng thái: Loại trừ $X_{\text{worst}}$ từ tập $S_{\text{in}}$ ra tập $S_{\text{out}}$.
+  - Trạng thái mô hình lúc này: Rút bớt đi một biến độc lập.
+- **Bước 3: Tái cấu trúc vòng lặp**
+  - Xây dựng lại một mô hình hồi quy mới với các biến còn lại trong tập $S_{\text{in}}$. Việc phân phối dữ liệu trong mô hình thay đổi, dẫn đến các biến sẽ có $p\text{-value}$ mới. Thuật toán lại lặp lại Bước 1 để tìm biến tiếp theo có đóng góp thấp nhất trong mô hình và tiếp tục loại bỏ nếu vi phạm giả thuyết.
+  - Điều kiện dừng: Nếu tại một bước rà soát, biến mang giá trị thống kê thấp nhất trong mô hình hiện tại vẫn thoả mãn giả thuyết ý nghĩa thống kê ($p\text{-value} \le \alpha_{\text{crit}}$) thì thuật toán dừng lại và giữ nguyên mô hình tinh gọn này.
+- **Tổng số mô hình tối đa:**
+
+$$\text{Total}_{\text{Backward}} = 1 + p + (p-1) + (p-2) + \dots + 2 = 1 + \frac{(p+2)(p-1)}{2}$$ (Công thức này xấp xỉ bằng $\frac{p(p+1)}{2}$ tương tự như Forward Selection).
+
+**Đường đi của Backward đối với dataset `diabetes` như sau:**
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+data(diabetes, package = "lars")
+
+df <- as.data.frame(unclass(diabetes$x))
+df$y <- diabetes$y
+
+current_vars <- setdiff(names(df), "y")
+full_model <- lm(y ~ ., data = df)
+
+# ĐỒNG BỘ TẠI ĐÂY: Dùng extractAIC(mod)[2] thay vì AIC(mod)
+backward_full_path <- data.frame(
+  Step = 0,
+  Variable_Removed = "Full Model",
+  AIC = extractAIC(full_model)[2]
+)
+
+step_num <- 1
+
+while(length(current_vars) > 0){
+  candidate_aic <- c()
+  
+  for(v in current_vars){
+    vars_try <- setdiff(current_vars, v)
+    if(length(vars_try) == 0){
+      form_try <- as.formula("y ~ 1")
+    } else {
+      form_try <- as.formula(paste("y ~", paste(vars_try, collapse = " + ")))
+    }
+    model_try <- lm(form_try, data = df)
+    candidate_aic[v] <- extractAIC(model_try)[2] # ĐỒNG BỘ TẠI ĐÂY
+  }
+  
+  worst_var <- names(which.min(candidate_aic))
+  current_vars <- setdiff(current_vars, worst_var)
+  
+  if(length(current_vars) == 0){
+    best_model <- lm(y ~ 1, data = df)
+  } else {
+    best_model <- lm(as.formula(paste("y ~", paste(current_vars, collapse = " + "))), data = df)
+  }
+  
+  backward_full_path <- rbind(
+    backward_full_path,
+    data.frame(
+      Step = step_num,
+      Variable_Removed = paste("-", worst_var),
+      AIC = extractAIC(best_model)[2] # ĐỒNG BỘ TẠI ĐÂY
+    )
+  )
+  
+  step_num <- step_num + 1
+}
+
+best_step <- which.min(backward_full_path$AIC)
+backward_full_path$Optimal <- FALSE
+backward_full_path$Optimal[best_step] <- TRUE
+
+# Vẽ đồ thị với hệ số AIC tinh gọn
+ggplot(backward_full_path, aes(x = Step, y = AIC)) +
+  geom_line(color = "#2ca02c", linewidth = 1.2) +
+  geom_point(aes(color = Optimal), size = 4) +
+  scale_color_manual(values = c("TRUE" = "#d62728", "FALSE" = "#2ca02c"), guide = "none") +
+  geom_text(
+    aes(label = Variable_Removed, hjust = ifelse(Step == 0, -0.1, 0.5)),
+    vjust = -1.5, size = 3.2, fontface = "bold", color = "#333333"
+  ) +
+  scale_x_continuous(breaks = backward_full_path$Step) +
+  scale_y_continuous(limits = c(min(backward_full_path$AIC) - 10, max(backward_full_path$AIC) + 15)) +
+  labs(
+    title = "Complete Path of Backward Elimination",
+    subtitle = paste("Minimum AIC at Step", best_step - 1),
+    x = "Elimination Step (Full Model -> Null Model)",
+    y = "AIC"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", margin = margin(b = 5)),
+    plot.subtitle = element_text(face = "italic", margin = margin(b = 15)),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+  )
+```
+
+- **Diễn giải đường đi của Backward Elimination**
+
+Biểu đồ trên trực quan hóa quá trình Backward Elimination theo tiêu chí giảm chỉ số AIC như sau:
+
+1.  **Điểm khởi đầu (Step 0 - Full Model):**
+    - **Trạng thái:** Thuật toán bắt đầu với một mô hình đầy đủ (Full Model) chứa toàn bộ 10 biến độc lập ban đầu của tập dữ liệu.
+    - **Giá trị AIC:** Tại bước 0 này, AIC ở mức cao nhất (2194.35). Điều này cho thấy việc đưa quá nhiều biến vào mô hình (bao gồm cả những biến gây nhiễu hoặc có hiện tượng đa cộng tuyến) làm cho mô hình bị cồng kềnh, dẫn đến việc phạt thông tin cao và làm giảm khả năng tổng quát hóa của mô hình.
+2.  **Xu hướng dịch chuyển của đường đồ thị (Từ Step 1 đến Step 4):**
+    - **Hướng đi:** Đường đồ thị có xu hướng giảm dần AIC từ trái qua phải.
+    - **Ý nghĩa:** Tại mỗi bước, thuật toán sẽ thử nghiệm loại bỏ lần lượt từng biến và tính toán lại AIC. Biến nào mà sau khi loại bỏ giúp giảm chỉ số AIC nhiều nhất sẽ bị gạch tên.
+    - Ở Step 1, biến age bị loại bỏ đầu tiên, chứng tỏ trong một mô hình tổng thể, độ tuổi đóng góp ít thông tin có ý nghĩa nhất đối với sự tiến triển của bệnh tiểu đường. Việc loại age giúp AIC giảm từ 2194.35 xuống 2192.42.
+    - Các bước tiếp theo, thuật toán tiếp tục thanh lọc mô hình bằng cách loại bỏ các biến hệ số hdl, glu,... Đường AIC đi xuống minh chứng rằng mô hình đang hoạt động hiệu quả hơn khi loại bỏ bớt "nhiễu".
+3.  **Điểm dừng tối ưu của thuật toán:**
+    - Thuật toán tự động dừng lại ở Step 4 (sau khi đã loại bỏ 4 biến và giữ lại 6 biến tối ưu trong mô hình).
+    - Lý do dừng lại là vì tại thời điểm này, nếu thuật toán cố chấp loại bỏ thêm bất kỳ biến nào trong số 6 biến còn lại (như bmi, ltg, map...), giá trị AIC sẽ bị tăng ngược trở lại. Điều đó có nghĩa là 6 biến còn lại đều là những biến mang lượng thông tin cực kỳ quan trọng để giải thích biến phụ thuộc y.
+    
+### Lựa chọn mô hình bằng phương pháp Backward Elimination
+
+```{r}
+backward_model <- step(
+  full_model,
+  direction = "backward",
+  trace = TRUE
+)
+
+summary_backward <- summary(backward_model)
+
+adj_r2_backward <- summary_backward$adj.r.squared # R2 adj
+
+# Mallows' Cp
+rss_backward <- sum(residuals(backward_model)^2) # RSS
+sigma2_full <- summary(full_model)$sigma^2 # phương sai từ full model
+n <- nrow(train_data)
+p_backward <- length(coef(backward_model)) # số tham số, bao gồm intercept
+
+# Cp = RSS / sigma2_full - (n - 2p)
+cp_backward <- rss_backward / sigma2_full - (n - 2 * p_backward)
+
+cat("Backward selection model:\n")
+cat("Adjusted R-squared:", round(adj_r2_backward, 4), "\n")
+cat("Mallows' Cp:", round(cp_backward, 4), "\n")
+cat("AIC:", round(AIC(backward_model), 2), "\n")
+cat("BIC:", round(BIC(backward_model), 2), "\n")
+```
+Thuật toán Backward Elimination bắt đầu từ mô hình đầy đủ và lần lượt loại bỏ các biến `age`, `hdl` và `tch` do việc loại bỏ các biến này giúp giảm giá trị AIC. Mô hình cuối cùng gồm các biến `sex`, `bmi`, `map`, `tc`, `ldl`, `ltg` và `glu`, đạt Adjusted (R^2 = 0.4973). Kết quả này trùng với mô hình thu được từ Forward Selection, cho thấy tập biến được lựa chọn khá ổn định.
+
+
+```{r}
+# =========================
+# BACKWARD SELECTION
+# =========================
+
+full_model <- lm(target ~ ., data = train_data)
+
+current_model <- full_model
+
+backward_metrics <- data.frame()
+
+previous_formula <- ""
+
+n <- nrow(train_data)
+
+sigma2_full <- summary(full_model)$sigma^2
+
+step_num <- 0
+
+repeat {
+
+  step_num <- step_num + 1
+
+  # chạy đúng 1 step
+  next_model <- step(
+    current_model,
+    direction = "backward",
+    steps = 1,
+    trace = FALSE
+  )
+
+  current_formula <- deparse(formula(next_model))
+
+  # nếu model không đổi thì stop
+  if(current_formula == previous_formula) {
+    break
+  }
+
+  previous_formula <- current_formula
+
+  # =========================
+  # METRICS
+  # =========================
+
+  summary_fit <- summary(next_model)
+
+  rss <- sum(residuals(next_model)^2)
+
+  p <- length(coef(next_model))
+
+  adj_r2 <- summary_fit$adj.r.squared
+
+  aic <- AIC(next_model)
+
+  bic <- BIC(next_model)
+
+  # Mallows Cp
+  cp <- rss / sigma2_full - (n - 2 * p)
+
+
+  backward_metrics <- rbind(
+    backward_metrics,
+    data.frame(
+      Step = step_num,
+      Formula = current_formula,
+      Num_predictors = p - 1,
+      Adj_R2 = round(adj_r2, 4),
+      AIC = round(aic, 2),
+      BIC = round(bic, 2),
+      Cp = round(cp, 2)
+    )
+  )
+
+  current_model <- next_model
+}
+
+
+knitr::kable(
+  backward_metrics,
+  digits = 4,
+  caption = "Kết quả qua từng bước của Backward Elimination"
+)
+```
+
+Kết quả cho thấy việc loại bỏ các biến `age`, `hdl` và `tch` giúp cải thiện chất lượng mô hình. Mô hình cuối cùng gồm 7 biến có Adjusted (R^2) lớn nhất, đồng thời AIC, BIC và Mallows' (C_p) nhỏ nhất.
+
+
+### Phân tích ưu và nhược điểm
+
+#### Ưu điểm:
+
+- **Xem xét toàn bộ biến ngay từ đầu:** Bắt đầu với mô hình đầy đủ, bao gồm tất cả các biến dự báo. Từ đó, cho phép đánh giá vai trò của từng biến trong mối quan hệ đa biến tổng thể, hạn chế khả năng bỏ sót những biến chỉ có ý nghĩa khi được xem xét đồng thời cùng các biến khác.
+
+#### Nhược điểm:
+
+- **Xem xét toàn bộ biến ngay từ đầu:** Do Backward Elimination cần xây dựng mô hình đầy đủ ngay từ đầu, phương pháp này hoàn toàn không thể thực thi khi số biến dự báo lớn hơn số lượng quan sát ($p > n$). Khi đó, ma trận hiệp biến không khả nghịch, hệ thống không đủ bậc tự do để ước lượng các hệ số bằng phương pháp OLS.
+
+## Stepwise Selection (Lựa chọn từng bước)
+
+Là sự kết hợp giữa hai phương pháp loại trừ lùi và chọn tiến. Phương pháp này giải quyết được trường hợp khi các biến được thêm vào hoặc loại bỏ ở giai đoạn đầu của quy trình, nhưng lại muốn thay đổi quyết định (thêm hoặc bớt các biến) đối với chúng ở các giai đoạn sau. Tại mỗi bước, một biến có thể được thêm vào hoặc bị loại bỏ, và mô hình liên tục được tái đánh giá toàn diện. [tham khảo sách Faraway, J. J. (2015). Linear Models with R (2nd ed.) chương 10, mục 10.2 trang 151 ]
+
+### Nguyên lý hoạt động:
+
+1.  Thuật toán bắt đầu tương tự như *Forward Selection* bằng cách thêm từng biến một vào mô hình rỗng.
+2.  Tuy nhiên, tại mỗi bước sau khi một biến mới được thêm vào, thuật toán sẽ thực hiện ngay một lượt rà soát lùi (*Backward elimination*) đối với toàn bộ các biến đã hiện diện trước đó trong mô hình.
+3.  Nếu một biến đã được đưa vào từ các bước trước nhưng nay trở nên dư thừa hay không còn ý nghĩa thống kê do sự xuất hiện phối hợp của các biến mới, nó sẽ lập tức bị loại bỏ.
+4.  Quy trình dừng lại khi không có biến nào ngoài mô hình đủ điều kiện để thêm vào và đồng thời không có biến nào trong mô hình thỏa mãn điều kiện loại ra.
+
+### Thuật toán:
+
+#### Bắt đầu:
+
+- Mô hình rỗng (Null Model).
+- Trạng thái mô hình:
+
+$$Y = \beta_0$$ \* Hai ngưỡng kiểm định thiết lập bắt buộc: Ngưỡng đầu vào ($\alpha_{\text{enter}}$) và Ngưỡng loại trừ ($\alpha_{\text{remove}}$). \* Điều kiện ràng buộc:
+
+$$\alpha_{\text{enter}} < \alpha_{\text{remove}}$$
+
+#### Quy trình đi từng bước (Chu kỳ lặp kép):
+
+- **Pha 1: Thêm biến (Forward Step):**
+  - Thuật toán quét qua tập biến ngoài mô hình $S_{\text{out}}$, tìm biến $X_{\text{best}}$ tốt nhất.
+  - Nếu $X_{\text{best}}$ thoả mãn điều kiện đầu vào ($p\text{-value} \le \alpha_{\text{enter}}$), thì thêm nó vào tập $S_{\text{in}}$.
+- **Pha 2: Kiểm tra nội bộ (Backward Step)**
+  - Ngay sau khi biến mới được thêm vào mô hình, cấu trúc hiệp biến thay đổi. Việc tính toán dừng lại, ước lượng lại mô hình với tập $S_{\text{in}}$ mới và quét một lượt các tiêu chuẩn của tất cả các biến đang có mặt ở trong mô hình.
+  - Do hiện tượng đa cộng tuyến, sự xuất hiện của biến mới có thể làm tăng $p\text{-value}$ của một biến cũ. Nếu phát hiện có bất kỳ biến cũ nào bị vượt ngưỡng đầu ra ($p\text{-value} > \alpha_{\text{remove}}$), thuật toán lập tức đẩy biến cũ đó trở lại tập $S_{\text{out}}$.
+- **Điều kiện dừng:**
+  - Thuật toán lặp đi lặp lại chu kỳ kép này liên tục và dừng lại khi chạm đến điểm cân bằng động: nếu ở ngoài không còn bất kỳ biến nào đủ tốt để thỏa mãn tiêu chuẩn bước vào ($p\text{-value} \le \alpha_{\text{enter}}$), đồng thời ở bên trong không còn bất cứ biến nào vi phạm tiêu chuẩn đầu ra ($p\text{-value} > \alpha_{\text{remove}}$).
+- **Tổng số mô hình tối đa mà Stepwise phải tính toán xấp xỉ:** $$\text{Total}_{\text{Stepwise}} \approx p^2$$
+
+**Biểu đổ đường đi của stepwise như sau:**
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+data(diabetes, package = "lars")
+
+df <- as.data.frame(unclass(diabetes$x))
+df$y <- diabetes$y
+
+# --- 1. ALGORITHM WITH CANDIDATES LOGGING (ENGLISH LOCALIZATION) ---
+
+all_vars <- setdiff(names(df), "y")
+selected_vars <- c() 
+
+stepwise_chosen <- data.frame(
+  Step = 0,
+  Action = "Intercept",
+  AIC = extractAIC(lm(y ~ 1, data = df))[2]
+)
+
+all_candidates <- data.frame(
+  Step = integer(),
+  Type = character(),
+  Variable = character(),
+  AIC = numeric()
+)
+
+current_aic <- extractAIC(lm(y ~ 1, data = df))[2]
+step_num <- 1
+
+while(step_num <= 10) {
+  temp_candidates <- data.frame(Step = integer(), Type = character(), Variable = character(), AIC = numeric())
+  
+  # A. Forward candidates (Try Add)
+  remaining_vars <- setdiff(all_vars, selected_vars)
+  if(length(remaining_vars) > 0) {
+    for(v in remaining_vars) {
+      vars_try <- c(selected_vars, v)
+      form_try <- as.formula(paste("y ~", paste(vars_try, collapse = " + ")))
+      aic_try <- extractAIC(lm(form_try, data = df))[2]
+      
+      # Translated to English: "Try Add (+)"
+      temp_candidates <- rbind(temp_candidates, data.frame(Step = step_num, Type = "Try Add (+)", Variable = v, AIC = aic_try))
+    }
+  }
+  
+  # B. Backward candidates (Try Remove)
+  if(length(selected_vars) > 1) {
+    for(v in selected_vars) {
+      vars_try <- setdiff(selected_vars, v)
+      form_try <- as.formula(paste("y ~", paste(vars_try, collapse = " + ")))
+      aic_try <- extractAIC(lm(form_try, data = df))[2]
+      
+      # Translated to English: "Try Remove (-)"
+      temp_candidates <- rbind(temp_candidates, data.frame(Step = step_num, Type = "Try Remove (-)", Variable = v, AIC = aic_try))
+    }
+  }
+  
+  if(nrow(temp_candidates) == 0) break
+  
+  all_candidates <- rbind(all_candidates, temp_candidates)
+  
+  best_idx <- which.min(temp_candidates$AIC)
+  best_choice <- temp_candidates[best_idx, ]
+  
+  if(best_choice$Type == "Try Add (+)") {
+    selected_vars <- c(selected_vars, best_choice$Variable)
+    action_label <- paste("+", best_choice$Variable)
+  } else {
+    selected_vars <- setdiff(selected_vars, best_choice$Variable)
+    action_label <- paste("-", best_choice$Variable)
+  }
+  
+  current_aic <- best_choice$AIC
+  stepwise_chosen <- rbind(stepwise_chosen, data.frame(Step = step_num, Action = action_label, AIC = current_aic))
+  
+  step_num <- step_num + 1
+}
+
+global_best_step <- stepwise_chosen$Step[which.min(stepwise_chosen$AIC)]
+stepwise_chosen$Is_Optimal <- (stepwise_chosen$Step == global_best_step)
+
+# --- 2. GGPLOT FIX DISPLAY & ENGLISH TRANSLATION ---
+
+ggplot() +
+  # Candidates background points
+  geom_point(
+    data = all_candidates,
+    aes(x = Step, y = AIC, group = Type, shape = Type),
+    color = "#aec7e8",
+    size = 2.5,
+    alpha = 0.6,
+    position = position_jitter(width = 0.15, height = 0)
+  ) +
+  # Main chosen path line
+  geom_line(
+    data = stepwise_chosen,
+    aes(x = Step, y = AIC),
+    color = "#2ca02c",
+    linewidth = 1.2
+  ) +
+  # Step decision nodes
+  geom_point(
+    data = stepwise_chosen,
+    aes(x = Step, y = AIC, color = Is_Optimal),
+    size = 4,
+    show.legend = FALSE
+  ) +
+  scale_color_manual(values = c("TRUE" = "#d62728", "FALSE" = "#2ca02c")) +
+  
+  # Step action text labels
+  geom_text(
+    data = stepwise_chosen,
+    aes(x = Step, y = AIC, label = Action, hjust = ifelse(Step == 0, -0.1, 0.5)),
+    vjust = -1.6,
+    size = 3.2,
+    fontface = "bold",
+    color = "#333333"
+  ) +
+  scale_x_continuous(breaks = stepwise_chosen$Step) +
+  # FIX: Adjusted limits to give Intercept and candidates more top breathing room
+  scale_y_continuous(limits = c(min(all_candidates$AIC) - 20, max(stepwise_chosen$AIC) + 50)) +
+  
+  # TRANSLATION: English titles and labels
+  labs(
+    title = "Complete Path of Stepwise Selection\n& Candidates Evaluation", # Added \n to fix cut-off title
+    subtitle = paste("Solid Line: Chosen Path | Light Blue Shapes: Alternative Actions Evaluated at Each Step\nOptimal Model Reached at Step", global_best_step),
+    x = "Algorithmic Step",
+    y = "AIC",
+    shape = "Candidate Actions"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", margin = margin(b = 5)),
+    plot.subtitle = element_text(face = "italic", size = 10, margin = margin(b = 15)),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(t = 20, r = 25, b = 20, l = 20) # Expanded margins
+  )
+
+ 
+```
+
+**Diễn giải mô hình Stepwise Regression**
+
+1.  **Trạng thái khởi tạo và Xu hướng tổng quan**
+    - **Bước khởi đầu (Step 0):** Thuật toán xuất phát từ mô hình rỗng chỉ chứa hệ số chặn (Intercept). Tại đây, giá trị chỉ số AIC đạt mức tối đa (vượt ngưỡng 3800), phản ánh mức độ mất mát thông tin nghiêm trọng nhất do chưa có biến dự báo.
+    - **Xu hướng dịch chuyển:** Giảm dần AIC từ trái qua phải.
+2.  **Cơ chế đánh giá tập hợp ứng viên (Candidate Evaluation)**
+    - **Sàng lọc biến nạp (Step 1 đến Step 5):** Tại Step 1, các phương án thử nghiệm (`Try Add (+)`) phân tán ở vùng AIC cao (3750 – 3800). Thuật toán thực hiện bước đi `+ bmi` nhờ vị trí điểm này nằm ở đáy thấp nhất của tập hợp ứng viên, chứng tỏ biến `bmi` mang lại lượng thông tin biên lớn nhất tại thời điểm xét duyệt. Cơ chế này lặp lại tương tự để nạp lần lượt `+ ltg`, `+ map`, `+ tc`, và `+ sex`.
+    - **Điểm cực trị tối ưu toàn cục (Step 6):** Hành động `+ ldl` đưa giá trị AIC chạm mức tối thiểu trên toàn bộ không gian trạng thái. Đây chính là cấu hình mô hình đạt trạng thái cân bằng lý tưởng giữa sức mạnh giải thích và độ tinh gọn.
+    - **Hiện tượng quá khớp và bão hòa thông tin (Step 7 đến Step 10):** Kể từ Step 7 trở đi, khi ép thuật toán chạy hết số bước định sẵn (`Full Steps`), dải ứng viên (bao gồm cả `Try Add` và `Try Remove`) co cụm sát nhau và đường lộ trình chính thức bắt đầu đi ngang. Hiện tượng dao động luân phiên của biến `tch` (`+ tch`, `- tch`) ở các bước cuối mà không làm giảm thêm AIC là minh chứng trực quan cho thấy mô hình đã rơi vào trạng thái quá khớp (Overfitting), việc tích hợp thêm biến không còn mang lại hiệu ứng cải thiện ý nghĩa.
+
+**Nhận xét:** Khác với tính chất một chiều của Forward hay Backward Selection, cơ chế rà soát hai chiều của Stepwise Selection cho phép đánh giá động và liên tục toàn bộ tập hợp ứng viên tại từng thời điểm. Phương pháp này xử lý hiệu quả hiện tượng đa cộng tuyến và sự trùng lặp thông tin, đảm bảo mô hình cuối cùng đạt cấu trúc tối ưu nhất.
+
+### Lựa chọn mô hình bằng phương pháp Stepwise Selection
+
+```{r}
+# Giả sử đã có null_model và full_model
+stepwise_model <- step(
+  null_model,
+  scope = list(lower = null_model, upper = full_model),
+  direction = "both",
+  trace = TRUE
+)
+
+summary(stepwise_model)
+
+# Tính Adj R-squared
+summary_stepwise <- summary(stepwise_model)
+adj_r2_stepwise <- summary_stepwise$adj.r.squared
+
+# Mallows' Cp
+rss_stepwise <- sum(residuals(stepwise_model)^2)
+sigma2_full <- summary(full_model)$sigma^2
+n <- nrow(train_data)
+p_stepwise <- length(coef(stepwise_model))
+cp_stepwise <- rss_stepwise / sigma2_full - (n - 2 * p_stepwise)
+
+# 
+cat("\nStepwise selection model:\n")
+cat("Adjusted R-squared:", round(adj_r2_stepwise, 4), "\n")
+cat("Mallows' Cp:", round(cp_stepwise, 4), "\n")
+cat("AIC:", round(AIC(stepwise_model), 2), "\n")
+cat("BIC:", round(BIC(stepwise_model), 2), "\n")
+```
+Stepwise Selection lựa chọn mô hình gồm các biến `ltg`, `bmi`, `map`, `tc`, `sex`, `ldl` và `glu`. Mô hình thu được có Adjusted (R^2 = 0.4973), đồng thời đạt các giá trị AIC, BIC và Mallows' (C_p) tương tự Forward Selection và Backward Elimination. Điều này cho thấy kết quả lựa chọn biến nhất quán giữa các phương pháp.
+
+```{r}
+# =========================
+# STEPWISE SELECTION
+# =========================
+
+null_model <- lm(target ~ 1, data = train_data)
+
+full_model <- lm(target ~ ., data = train_data)
+
+# Model hiện tại
+current_model <- null_model
+
+# Biến lưu kết quả
+stepwise_metrics <- data.frame()
+
+# Các biến dùng để stop
+previous_formula <- ""
+
+n <- nrow(train_data)
+
+sigma2_full <- summary(full_model)$sigma^2
+
+step_num <- 0
+
+repeat {
+
+  step_num <- step_num + 1
+
+  next_model <- step(
+    current_model,
+    scope = list(
+      lower = null_model,
+      upper = full_model
+    ),
+    direction = "both",
+    steps = 1,
+    trace = FALSE
+  )
+
+  current_formula <- deparse(formula(next_model))
+
+  if(current_formula == previous_formula) {
+    break
+  }
+
+  previous_formula <- current_formula
+
+  # =========================
+  # TÍNH METRICS
+  # =========================
+
+  summary_fit <- summary(next_model)
+
+  rss <- sum(residuals(next_model)^2)
+
+  p <- length(coef(next_model))
+
+  adj_r2 <- summary_fit$adj.r.squared
+
+  aic <- AIC(next_model)
+
+  bic <- BIC(next_model)
+
+  # Mallows Cp
+  cp <- rss / sigma2_full - (n - 2 * p)
+
+
+  stepwise_metrics <- rbind(
+    stepwise_metrics,
+    data.frame(
+      Step = step_num,
+      Formula = current_formula,
+      Num_predictors = p - 1,
+      Adj_R2 = round(adj_r2, 4),
+      AIC = round(aic, 2),
+      BIC = round(bic, 2),
+      Cp = round(cp, 2)
+    )
+  )
+
+  # update model
+  current_model <- next_model
+}
+
+# =========================
+# KẾT QUẢ
+# =========================
+
+
+knitr::kable(
+  stepwise_metrics,
+  digits = 4,
+  caption = "Kết quả qua từng bước của stepwise_metricsn"
+)
+```
+
+Kết quả cho thấy việc bổ sung các biến giúp cải thiện chất lượng mô hình, thể hiện qua Adjusted (R^2) tăng dần và các chỉ tiêu AIC, BIC, Mallows' (C_p) giảm dần. Mô hình tại bước 7 cho kết quả tốt nhất và được chọn làm mô hình cuối cùng.
+
+
+### Phân tích ưu và nhược điểm
+
+#### Ưu điểm:
+
+- Linh hoạt: Stepwise cho phép mô hình sửa sai liên tục bằng cơ chế "thêm mới - rà soát cũ", kiểm soát hiện tượng đa cộng tuyến cục bộ.
+- Hạn chế trùng lặp thông tin: Mô hình được tinh lọc liên tục, đảm bảo tập hợp biến giữ lại là tinh gọn và phối hợp tối ưu.
+
+#### Nhược điểm:
+
+- Phụ thuộc vào cách đặt ngưỡng: Thuật toán phụ thuộc và việc thiết lập cặp giá trị $(\alpha_{\text{enter}}, \alpha_{\text{remove}})$. Nếu thiết lập không hợp lý, vòng lặp có thể rơi vào trạng thái lặp vô hạn (một biến bị thêm vào rồi lại bị loại ra liên tục).
+- Vấn đề kiểm định nhiều lần (Multiple testing): Việc thực hiện liên tiếp các chuỗi kiểm định giả thuyết thống kê ($t$ hoặc $F$) trên cùng một tập dữ liệu làm gia tăng sai lầm loại I tích lũy. Các chỉ số $p\text{-value}$ ở mô hình cuối cùng có xu hướng bị quá nhỏ so với thực tế.
+
+## So sánh tổng hợp các phương pháp lựa chọn biến
+
+| Tiêu chí | Forward Selection (Tiến) | Backward Selection (Lùi) | Stepwise Selection (Hai hướng) |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| **Điểm bắt đầu** | **Mô hình rỗng (Null Model)**<br> Chỉ chứa hệ số chặn $\beta_0$. | **Mô hình đầy đủ (Full Model)**<br> Chứa toàn bộ $p$ biến ban đầu. | **Mô hình rỗng (Null Model)**<br> Chỉ chứa hệ số chặn $\beta_0$. |
+| **Cơ chế chính** | **Thêm dần:** Tại mỗi bước, nạp biến độc lập có đóng góp tốt nhất vào mô hình. | **Loại trừ dần:** Tại mỗi bước, gạch tên biến độc lập ít hữu ích nhất ra khỏi mô hình. | **Thêm/Bớt linh hoạt:** Thực hiện pha tiến để thêm biến mới, rồi kiểm tra lùi để loại biến cũ bị lu mờ. |
+| **Điều kiện dừng (Stopping Criteria)** | Khi không có biến nào ở ngoài thỏa mãn ngưỡng đầu vào | Khi tất cả các biến giữ lại đều đạt điều kiện giữ lại. | Khi đạt trạng thái cân bằng động: Bên ngoài không còn biến đủ tốt để vào ($\le \alpha_{\text{enter}}$), bên trong không còn biến để bị loại trừ ($> \alpha_{\text{remove}}$). |
+| **Tổng số mô hình tối đa** | $$\frac{p(p+1)}{2}$$ | $$1 + \frac{(p+2)(p-1)}{2}$$ | $$\approx p^2$$ |
+| **Hạn chế đối với dữ liệu cao chiều** | Chạy được từ bước 1, nhưng bị chặn khi số biến được chọn chạm mốc số lượng quan sát ($n$). | **Không thể thực thi** nếu $p > n$, vì mô hình đầy đủ ban đầu không thể ước lượng được bằng OLS. | Chạy được từ bước 1, nhưng cũng sẽ bị chặn hoặc gặp lỗi đa cộng tuyến nghiêm trọng nếu không có hiệu chỉnh. |
+| **Ưu điểm cốt lõi** | \- Tốc độ tính toán nhanh<br> - Phù hợp khi số lượng biến ban đầu lớn. | \- Nhìn được bức tranh toàn cảnh ngay từ đầu<br> - Giữ được các biến có tính tương tác, bổ trợ cho nhau | \- Có cơ chế tự sửa sai liên tục <br> - Kiểm soát hiện tượng đa cộng tuyến rất tốt. |
+| **Nhược điểm cốt lõi** | Biến đã lọt vào mô hình thì **không bao giờ bị loại ra**, dễ giữ lại thông tin trùng lặp. | Biến đã bị gạch tên thì **không bao giờ có cơ hội quay lại** mô hình. | Tốn chi phí tính toán hơn so với hai phương pháp đơn lẻ (do phải quét hai chiều). |
+

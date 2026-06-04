@@ -1,0 +1,676 @@
+# Các tiêu chí lựa chọn biến cho mô hình
+
+Khi xây dựng mô hình hồi quy, mục tiêu không chỉ là tìm mô hình có độ khớp (*goodness-of-fit*) cao mà còn cần đảm bảo mô hình đủ đơn giản để dễ diễn giải và sử dụng. Trong nhiều trường hợp, có thể chấp nhận giảm một phần nhỏ độ khớp để đổi lấy một mô hình gọn hơn với số lượng biến ít hơn.
+
+Nếu chỉ dựa vào tổng bình phương sai số
+
+$$\mathrm{SSE}=\sum_{i=1}^{n}(y_i-\hat y_i)^2,$$
+
+thì việc bổ sung thêm biến giải thích sẽ không làm SSE tăng. Tương tự, hệ số xác định $R^2$ cũng không giảm khi thêm biến vào mô hình. Do đó, khi sử dụng riêng SSE hoặc $R^2$ để đánh giá, các mô hình có nhiều biến thường sẽ được ưu tiên hơn.
+
+Tuy nhiên, mô hình có quá nhiều biến có thể dẫn đến hiện tượng *overfitting*, tức là mô hình khớp rất tốt với dữ liệu huấn luyện (train) nhưng lại dự báo kém trên dữ liệu mới (test hoặc out-of-time). Vì vậy, cần có các tiêu chuẩn lựa chọn biến nhằm cân bằng giữa độ khớp và độ phức tạp của mô hình.
+
+```{r, echo=FALSE}
+
+library(lars)
+library(leaps)
+
+
+par(family = "Times")
+
+
+# 3. CHẠY REGSUBSETS
+
+best_subsets <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustive")
+summary_subsets <- summary(best_subsets)
+
+train_err <- numeric(10)
+test_err <- numeric(10)
+
+# ==========================================
+# 4. VÒNG LẶP TÍNH SAI SỐ
+# ==========================================
+for (d in 1:10) {
+  # Lấy tên các biến (tự động)
+  vars <- names(which(summary_subsets$outmat[d, ] == "*"))
+  
+  # Lọc bỏ hệ số chặn (Intercept)
+  vars <- vars[vars != "(Intercept)"]
+  
+  # Ghép công thức
+  form <- as.formula(paste("target ~", paste(vars, collapse = "+")))
+  
+  # Huấn luyện mô hình
+  model <- lm(form, data = train_data)
+  
+  # Tính MSE
+  train_err[d] <- mean((train_data$target - predict(model, train_data))^2)
+  test_err[d] <- mean((test_data$target - predict(model, test_data))^2)
+}
+
+# ==========================================
+# 5. VẼ BIỂU ĐỒ 
+# ==========================================
+par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
+
+plot(1:10, train_err, type = "b", lwd = 3, col = "steelblue", pch = 16,
+     xlab = "Số lượng biến trong mô hình (d)", ylab = "Sai số dự báo (MSE)",
+     main = "Đánh đổi Bias-Variance trên dữ liệu Diabetes",
+     ylim = c(min(train_err) - 200, max(test_err) + 200))
+
+lines(1:10, test_err, type = "b", lwd = 3, col = "firebrick", pch = 16)
+
+opt_d <- which.min(test_err)
+abline(v = opt_d, lty = 2, col = "grey50", lwd = 2)
+points(opt_d, test_err[opt_d], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
+
+legend("topright", 
+       legend = c("Training error (Giảm đơn điệu)", 
+                  "Test error (Chữ U)", 
+                  paste("Vùng tối ưu (d =", opt_d, ")")),
+       lty = c(1, 1, 2), lwd = c(3, 3, 2), pch = c(16, 16, NA),
+       col = c("steelblue", "firebrick", "grey50"), bty = "n", cex = 0.9)
+```
+
+Bài toán lựa chọn biến thực chất là tìm sự cân bằng giữa độ khớp (*goodness-of-fit*) và độ phức tạp của mô hình. Một mô hình có nhiều biến thường khớp dữ liệu tốt hơn, nhưng cũng dễ trở nên phức tạp và có nguy cơ quá khớp. Ngược lại, mô hình quá đơn giản có thể bỏ sót những thông tin quan trọng.
+
+Các tiêu chuẩn như Adjusted \$R\^2\$, Mallows' \$C_p\$, AIC và BIC đều được xây dựng theo cùng một ý tưởng: kết hợp giữa mức độ sai khác của mô hình với dữ liệu (*lack-of-fit*) và một thành phần phạt (*penalty*) đối với số lượng biến được sử dụng,
+
+$$\text{Tiêu chuẩn}
+=
+\text{Lack-of-fit} \; (\downarrow)
++
+\text{Penalty} \; (\uparrow)$$
+
+Điểm khác biệt giữa các tiêu chuẩn nằm ở cách xây dựng thành phần penalty. Chẳng hạn, Mallows' \$C_p\$ xuất phát từ việc ước lượng sai số dự báo ngoài mẫu, AIC dựa trên lý thuyết hợp lý cực đại và khoảng cách Kullback–Leibler, còn BIC được xây dựng từ quan điểm Bayes.
+
+## Hệ số xác định $R^2$
+
+### Công thức
+
+Đối với hồi quy tuyến tính, hệ số xác định $R^2$ được định nghĩa là:
+
+$$\boxed{\;R^2 \;=\; 1 - \frac{\mathrm{SSE}}{\mathrm{SST}}\;}, \qquad
+\mathrm{SST} = \sum_{i=1}^n (y_i - \bar y)^2. \tag{2}$$
+
+Trong đó:
+
+- $\mathrm{SST}$ là tổng biến thiên của $Y$ quanh trung bình $\bar y$,
+- $\mathrm{SSE}$ là phần biến thiên *chưa* được mô hình giải thích.
+- Do đó $R^2 \in [0,1]$ đo **tỷ lệ phương sai của** $Y$ được mô hình giải thích.
+
+### Lý giải nhược điểm luôn tăng khi thêm biến dẫn đến $R^2$ không thể dùng để chọn biến
+
+Hệ số xác định $R^2$ phản ánh mức độ biến thiên của Y được mô hình giải thích. Tuy nhiên, khi mở rộng mô hình bằng cách thêm các biến độc lập mới, thuật toán OLS sẽ có thêm không gian để tối ưu hóa và làm giảm tổng bình phương sai số (SSE). Ngay cả khi biến mới được thêm vào không có ý nghĩa thống kê, thuật toán vẫn có thể vô tình nắm bắt các nhiễu ngẫu nhiên (noise) của tập dữ liệu hiện tại. Hệ quả là $R^2$ luôn có xu hướng tăng đơn điệu theo số lượng tham số, làm tăng rủi ro quá khớp (overfitting) nếu không có cơ chế kiểm soát.
+
+- **Lack-of-fit:** Tử số $\mathrm{SSE}$ (càng lớn mô hình càng kém khớp).
+
+- **Penalty:** **Không có (0)**. Sự thiếu vắng của hình phạt khiến $R^2$ luôn chọn mô hình lớn.
+
+#### Chứng minh toán học: Tại sao $R^2$ luôn tăng khi thêm biến?
+
+- **Bước 1: Sự cố định của mẫu số (**$SST$)
+  - Đại lượng $SST = \sum_{i=1}^n (y_i - \bar{y})^2$ đo lường toàn bộ sự biến động của biến mục tiêu $Y$ xung quanh giá trị trung bình mẫu
+  - Giá trị này được tính toán hoàn toàn từ dữ liệu thực tế của $Y$, do đó nó là một **hằng số bất biến**, hoàn toàn độc lập và không thay đổi cho dù ta đưa bao nhiêu biến độc lập $X$ vào mô hình.
+- **Bước 2: Bản chất hình học của việc tối ưu hóa** $SSE$ trong OLS
+  - Thuật toán Bình phương Tối thiểu (OLS) tìm kiếm tập hợp hệ số $\hat{\beta}$ bằng cách giải bài toán cực tiểu hóa hình học: $\min_{\beta} \|Y - X\beta\|^2$.
+  - Giả sử ta đang có một mô hình con $\mathcal{M}_1$ với $d$ biến, không gian cột của ma trận thiết kế là $\mathcal{X}_1 \subset \mathbb{R}^n$. Giá trị hình chiếu của $Y$ lên không gian này cho ta tổng sai số bình phương $SSE_1$.
+  - Khi ta thêm một biến mới $X_{new}$ để tạo ra mô hình $\mathcal{M}_2$, không gian cột mở rộng thành $\mathcal{X}_2 = \mathcal{X}_1 \oplus \text{span}(X_{new})$. Lúc này, $\mathcal{X}_1$ trở thành một tập con không gian của $\mathcal{X}_2$ ($\mathcal{X}_1 \subseteq \mathcal{X}_2$).
+- **Bước 3: Hệ quả toán học của việc mở rộng không gian nghiệm**
+  - Vì không gian tìm kiếm nghiệm tối ưu của mô hình $\mathcal{M}_2$ bao hàm toàn bộ không gian của mô hình $\mathcal{M}_1$, thuật toán OLS ở mô hình $\mathcal{M}_2$ luôn có một phương án dự phòng là gán hệ số $\hat{\beta}_{new} = 0$. Nếu gán bằng 0, mô hình $\mathcal{M}_2$ sẽ có sai số bằng đúng mô hình $\mathcal{M}_1$.
+  - Tuy nhiên, nếu biến $X_{new}$ có dù chỉ một chút tương quan ngẫu nhiên (dù là nhiễu thuần túy) với biến mục tiêu $Y$, toán học OLS sẽ ngay lập tức lợi dụng mối tương quan này để gán cho $\hat{\beta}_{new}$ một giá trị khác 0 nhằm ép véc-tơ phần dư ngắn hơn nữa.
+  - Do đó, về mặt toán học ta luôn có hệ thức bất đẳng thức: $SSE_{\mathcal{M}_2} \le SSE_{\mathcal{M}_1}$.
+
+Vì $SST$ là hằng số và $SSE$ đơn điệu giảm khi số biến tăng, phân số $\frac{SSE}{SST}$ luôn luôn giảm hoặc giữ nguyên. Kéo theo chỉ số $R^2 = 1 - \frac{SSE}{SST}$ **luôn luôn tăng đơn điệu khi ta thêm biến**.
+
+Vì thiếu đi cơ chế phạt (penalty) đối với việc gia tăng số lượng tham số, $R^2$ không thể kiểm soát độ phức tạp của mô hình, từ đó dễ dẫn đến hiện tượng quá khớp (overfitting) nếu được dùng làm tiêu chí lựa chọn duy nhất.
+
+### Ứng dụng
+
+Là thước đo mô tả phổ biến nhất trong các báo cáo thống kê: "mô hình giải thích được X% biến thiên của $Y$". Hữu ích để báo cáo kết quả cho người không chuyên.
+
+- Ưu điểm: đơn giản, dễ hiểu, có ý nghĩa tỷ lệ rõ ràng, không cần ước lượng $\sigma^2$ riêng.
+
+- Nhược điểm: **đơn điệu tăng** theo $p$ nên không thể dùng so sánh các mô hình có số biến khác nhau; bị "lừa" hoàn toàn bởi biến nhiễu [@Sheather2009, §7.1.1].
+
+### Khi nào dùng
+
+Chỉ dùng $R^2$ để (i) báo cáo *mức độ khớp* của một mô hình đã chọn, hoặc (ii) so sánh các mô hình có **cùng số biến**. *Không bao giờ* dùng $R^2$ làm tiêu chuẩn chọn biến.
+
+## $R^2$ hiệu chỉnh ($R^2_{adj}$)
+
+### Công thức
+
+$$\boxed{\;R^2_{adj} \;=\; 1 - \frac{\mathrm{SSE}/(n-d-1)}{\mathrm{SST}/(n-1)}
+         \;=\; 1 - \left(\frac{n-1}{n-d-1}\right)(1-R^2)\;} \tag{3}$$
+
+- $d$ là số biến giải thích
+- $n-d-1$ là bậc tự do còn lại sau khi ước lượng
+- $d+1$ tham số.
+- Tử số $\mathrm{SSE}/(n-d-1) = \hat\sigma^2$ là **ước lượng không chệch của** $\sigma^2$;
+- Mẫu số $\mathrm{SST}/(n-1)$ là ước lượng không chệch của $\mathrm{Var}(Y)$.
+
+### Bản chất thống kê
+
+Cải tiến từ $R^2$ bằng cách dùng ước lượng không chệch của phương sai. Chỉ số này chỉ tăng nếu biến mới giúp giảm sai số đủ mạnh để bù đắp lại hình phạt mất đi bậc tự do.
+
+- **Lack-of-fit:** Tử số $\mathrm{SSE}$ (Tổng bình phương sai số).
+- **Penalty:** Mẫu số $(n - d - 1)$. Khi thêm biến ($d$ tăng), mẫu số giảm, tạo áp lực đẩy giá trị phân số $\mathrm{SSE}/(n-d-1)$ lên cao (tức làm giảm $R^2_{adj}$).
+
+#### Chứng minh toán học: Dẫn xuất công thức $R^2_{adj}$ từ lý thuyết thống kê
+
+Khai triển từng bước từ Bậc tự do (Degrees of Freedom)
+
+- **Bước 1: Giới hạn của ước lượng phương sai trong** $R^2$
+  - Trong $R^2$, phân số $\frac{SSE}{n}$ thực chất là một ước lượng chệch (biased estimator) của phương sai phần dư $\sigma^2$, vì nó chưa trừ đi số lượng tham số $d+1$ đã được dùng để hội tụ đường thẳng (làm mất đi bậc tự do).
+- **Bước 2: Sử dụng Ước lượng Không chệch (Unbiased Estimator)**
+  - Theo thống kê toán, ước lượng không chệch của phương sai phần dư là: $\hat{\sigma}^2_{res} = \frac{SSE}{n - d - 1}$.
+  - Ước lượng không chệch của phương sai toàn phần là: $\hat{\sigma}^2_{tot} = \frac{SST}{n - 1}$.
+- **Bước 3: Công thức cuối cùng của** $R^2_{adj}$
+  - Thế hai ước lượng không chệch này vào công thức gốc của $R^2$, ta được: $$R^2_{adj} = 1 - \frac{SSE / (n - d - 1)}{SST / (n - 1)}$$
+
+**Bản chất Hình phạt:** Đại lượng $(n - d - 1)$ ở mẫu số đóng vai trò là "hình phạt". Khi $d$ tăng lên, $(n - d - 1)$ nhỏ lại, làm phân số $\frac{SSE}{n - d - 1}$ bị đẩy giá trị lên cao (kéo $R^2_{adj}$ giảm xuống). Chỉ khi biến mới đủ tốt làm $SSE$ giảm một lượng áp đảo thì $R^2_{adj}$ mới có thể tăng.
+
+### Ứng dụng
+
+Là tiêu chuẩn chọn biến truyền thống trong các phần mềm hồi quy cổ điển.
+
+- Ưu điểm: dễ tính, không cần ước lượng $\sigma^2$ từ mô hình đầy đủ, giữ thang đo trực quan $[0, 1]$.
+
+- Nhược điểm: penalty $1/(n-d-1)$ *tăng chậm*, ngưỡng F = 1 rất "dễ dãi" — trong thực tế $R^2_{adj}$ **vẫn có xu hướng chọn mô hình quá lớn**; không có nền tảng lý thuyết hợp lý cực đại / Bayes như $C_p$, AIC, BIC.
+
+### Nguyên lý lựa chọn biến tối ưu dựa trên $R^2$ hiệu chỉnh
+
+Nguyên lý hoạt động trên đồ thị: Khi áp dụng các thuật toán lựa chọn biến (như Forward, Backward hoặc Stepwise) và biểu diễn $R^2_{adj}$ theo số lượng tham số d, đồ thị thường có dạng hình chữ Parabol với 3 giai đoạn:
+
+- Giai đoạn tăng trưởng: Khi đưa các biến có ý nghĩa thống kê cao vào mô hình, lượng sai số (SSE) giảm mạnh, áp đảo sự sụt giảm của bậc tự do, khiến $R^2_{adj}$ tăng nhanh.
+
+- Điểm tối ưu (Cực đại): Đạt được khi thuật toán tìm ra tập con (subset size) cân bằng tốt nhất giữa khả năng giải thích dữ liệu và độ phức tạp của mô hình.
+
+- Giai đoạn suy giảm: Nếu mô hình tiếp tục được bổ sung các biến không mang lại giá trị thông tin đáng kể, mức độ giảm của SSE sẽ không đủ bù đắp cho hình phạt từ việc mất đi bậc tự do. Khi đó, tỷ số trong công thức tăng lên làm cho $R^2_{adj}$ quay đầu giảm.
+
+```{r, echo=FALSE}
+library(lars)
+library(leaps)
+par(family = "Times")
+
+
+best_subset <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustive")
+best_summary <- summary(best_subset)
+
+adj_r2_vals <- best_summary$adjr2
+
+
+par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
+
+# Vẽ đường Adjusted R2
+plot(1:10, adj_r2_vals, type = "b", lwd = 3, col = "forestgreen", pch = 16,
+     xlab = "Số lượng biến trong mô hình (d)", 
+     ylab = expression(Adjusted~R^2),
+     main = "Sự biến thiên của Adjusted R-squared theo số lượng biến")
+
+# Tìm vị trí đạt giá trị lớn nhất (Cực đại)
+opt_d <- which.max(adj_r2_vals)
+
+# Kẻ đường tham chiếu và khoanh tròn điểm tối ưu
+abline(v = opt_d, lty = 2, col = "grey50", lwd = 2)
+points(opt_d, adj_r2_vals[opt_d], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
+
+# 
+legend("bottomright", 
+       legend = c("Adjusted R-squared", paste("Điểm tối ưu (d =", opt_d, ")")),
+       lty = c(1, 2), lwd = c(3, 2), pch = c(16, NA),
+       col = c("forestgreen", "grey50"), bty = "n")
+```
+
+Trong quá trình lựa chọn biến, nguyên lý tối ưu của $R^2_{adj}$ là tìm kiếm cực đại toàn cục. Nhờ vào thành phần phạt độ phức tạp thông qua bậc tự do $(n−d−1)$, $R^2_{adj}$ có khả năng đạt được một điểm dừng tự nhiên tại một số lượng biến tối ưu, từ đó khắc phục được xu hướng tăng đơn điệu của $R^2$. Điểm cao nhất của $R^2_{adj}$ chính là ngưỡng dừng toán học lý tưởng, cho biết mô hình đã đạt đến giới hạn giải thích thông tin mà không thu nạp thêm các nhiễu ngẫu nhiên.
+
+Phù hợp khi (i) chỉ cần một sàng lọc *thô* để loại biến rõ ràng không quan trọng; (ii) muốn duy trì cách diễn giải theo tỷ lệ "% biến thiên giải thích" trong báo cáo; (iii) $n$ vừa phải, không quá nhỏ.
+
+Không khuyến nghị làm tiêu chuẩn duy nhất khi mục tiêu là *dự báo*.
+
+## Mallows' $C_p$
+
+### Công thức
+
+Mallows' $C_p$ giải quyết nhược điểm của $R^2$ bằng cách đi tìm một ước lượng không chệch cho sai số ngoài tập mẫu thực tế.
+
+$$\boxed{\;C_p \;=\; \frac{1}{n}\bigl(\mathrm{SSE} + 2 d\, \hat\sigma^2\bigr)\;} \tag{4}$$ hoặc dạng tương đương: $$C_p^{\ast} \;=\; \frac{\mathrm{SSE}}{\hat\sigma^2} + 2d - n. \tag{5}$$
+
+- $\hat\sigma^2$ là ước lượng không chệch của $\sigma^2$ lấy từ mô hình **đầy đủ** (chứa tất cả $m$ biến).
+- $d$ là số biến trong mô hình con đang xét.
+
+#### Chứng minh toán học: Dẫn xuất công thức Mallows' $C_p$ từ lý thuyết thống kê (góc nhìn Bias-Variance)
+
+- **Bước 1: Phân tách cấu trúc sai số thực tế**
+  - Sai số thực tế khi đem mô hình dự báo cho một tập dữ liệu mới (Test MSE) được định nghĩa qua kỳ vọng toán học: $$Err_{test} = \frac{1}{n} \sum_{i=1}^n E[(Y_{new, i} - \hat{Y}_i)^2]$$
+  - Khai triển đại lượng này bằng cách chèn giá trị kỳ vọng thực tế $E[Y_i] = \mu_i$, ta thu được phương trình cân bằng: $$Err_{test} = E[Err_{train}] + \frac{2}{n} \sum_{i=1}^n Cov(\hat{Y}_i, Y_i)$$
+  - Trong đó $Err_{train} = \frac{SSE}{n}$ là sai số tính trên tập huấn luyện. Thành phần $\frac{2}{n} \sum Cov(\hat{Y}_i, Y_i)$ chính là cái giá toán học của sự lạc quan thái quá (Optimism).
+- **Bước 2: Chứng minh giá trị Hiệp phương sai qua Ma trận Mũ (Hat Matrix)**
+  - Trong hồi quy OLS, véc-tơ giá trị dự báo được tính bằng phép chiếu tuyến tính: $\hat{Y} = H Y$, với $H = X(X^T X)^{-1}X^T$.
+  - Xét riêng từng tọa độ dự báo: $\hat{Y}_i = \sum_{j=1}^n H_{ij} Y_j$.
+  - Tính toán hiệp phương sai giữa dự báo $\hat{Y}_i$ và thực tế $Y_i$: $$Cov(\hat{Y}_i, Y_i) = Cov\left(\sum_{j=1}^n H_{ij} Y_j, Y_i\right) = \sum_{j=1}^n H_{ij} Cov(Y_j, Y_i)$$
+  - Vì các quan sát $Y_i$ độc lập với nhau, nên $Cov(Y_j, Y_i) = 0$ với mọi $j \neq i$, và $Cov(Y_i, Y_i) = Var(Y_i) = \sigma^2$. Do đó, phương trình rút gọn thần kỳ về: $$Cov(\hat{Y}_i, Y_i) = H_{ii} \sigma^2$$
+- **Bước 3: Sử dụng tính chất Vết (Trace) của Ma trận Chiếu**
+  - Tổng các hiệp phương sai trên toàn bộ $n$ quan sát sẽ là: $$\sum_{i=1}^n Cov(\hat{Y}_i, Y_i) = \sum_{i=1}^n H_{ii} \sigma^2 = \text{Tr}(H) \sigma^2$$
+  - Theo đại số tuyến tính, ma trận chiếu $H$ lên không gian $d$ chiều của các biến độc lập có vết đúng bằng số chiều của không gian đó: $\text{Tr}(H) = d$ (nếu mô hình không có intercept) hoặc $d+1$ (nếu có tính intercept). Ở đây ta ký hiệu là $d$ tham số.
+  - Do đó, ta có hệ thức: $\sum_{i=1}^n Cov(\hat{Y}_i, Y_i) = d \sigma^2$.
+- **Bước 4: Thiết lập chỉ số Mallows'** $C_p$
+  - Thế kết quả hiệp phương sai vào phương trình ở Bước 1: $Err_{test} \approx \frac{SSE}{n} + \frac{2d\sigma^2}{n}$.
+  - Nhân cả hai vế với $n$ và thay thế hằng số chưa biết $\sigma^2$ bằng ước lượng không chệch từ mô hình lớn nhất $\hat{\sigma}^2$, ta có công thức Mallows' $C_p$: $$C_p = \frac{1}{n} (SSE + 2d\hat{\sigma}^2)$$
+
+### Bản chất thống kê: ước lượng không chệch của test MSE
+
+$C_p$ là ước lượng không chệch của sai số dự báo thực tế ngoài tập mẫu (Theo Colin Mallows (1973) (Test MSE). Do đó $C_p$ càng thấp càng tốt (do sai số càng thấp tức mô hình giải thích càng tốt).
+
+- **Lack-of-fit:** Đại lượng $\mathrm{SSE}$ (độ lệch/sai số trên tập luyện huấn luyện).
+- **Penalty:** Đại lượng $2d\hat{\sigma}^2$. Phạt tuyến tính theo số biến $d$ và độ nhiễu $\hat{\sigma}^2$.
+
+**Bản chất**: Khi tăng số biến d lên, phần sai số SSE sẽ giảm (do thêm biến giải thích). Tuy nhiên, khi cộng thêm đại lượng $2d\hat{\sigma}^2$ sẽ tăng khi số biến d tăng. Vậy nên chỉ khi biến mới thêm vào có ý nghĩa giải thích tốt, thì SSE sẽ giảm mạnh, bù trừ đi phần tăng của $2d\hat{\sigma}^2$, làm cho tổng thể $C_p$ giảm xuống. Nhưng ngược lại nếu thêm 1 biến giải thích không tốt, SSE giảm không đáng kể trong khi đó $2d\hat{\sigma}^2$ vẫn tăng dẫn đến $C_p$ cao.
+
+### Ứng dụng
+
+- Ưu điểm: ý nghĩa thống kê rõ ràng (ước lượng test MSE), có thước đo *tuyệt đối* để chẩn đoán bias (vị trí so với $y = d$).
+
+- Nhược điểm: cần $\hat\sigma^2$ từ mô hình đầy đủ — nếu mô hình đầy đủ *vẫn* thiếu biến quan trọng thì $\hat\sigma^2$ chệch lên và $C_p$ không còn không chệch; chỉ hợp lệ cho hồi quy tuyến tính Gauss với phương sai đồng nhất.
+
+### Nguyên lý lựa chọn biến tối ưu dựa trên Mallows' $C_p$
+
+**Nguyên lý chọn subset size**: Theo Hirotugu Akaike (1973), đã chứng minh dựa trên Khoảng cách **Kullback-Leibler** rằng khi ta thêm các biến không cần thiết vào mô hình, khoảng cách giữa phân phối mô hình dự báo và phân phối thực tế sẽ tăng lên, tạo ra hình dạng chữ U. Đáy của chữ U chính là điểm cực tiểu của $C_p$, nên sẽ chọn subset size tại điểm này.
+
+Ngoài ra theo công thức $C_p^{\ast}$, tiêu chuẩn chọn là tìm số biến d nhỏ nhất sao cho giá trị của $C_p^{\ast}$ giảm và chạm vào đường tham chiếu $y=d$. (Tức khi $C_p^{\ast} \approx d$ - mô hình không chệch (unbiased))
+
+Đặt $\mathrm{MSE}_{\text{test}} = \mathbb{E}[(Y^{\ast}-\hat Y^{\ast})^2]$.
+
+Có thể chứng minh training SSE *chệch xuống* so với $n\cdot\mathrm{MSE}_{\text{test}}$ một lượng xấp xỉ $2d\sigma^2$ (gọi là *optimism*). Mallows (1973) đề xuất *cộng trả lại* đúng độ chệch đó: $$\mathbb{E}\!\left[\frac{1}{n}(\mathrm{SSE} + 2d\hat\sigma^2)\right]
+\;\approx\; \mathrm{MSE}_{\text{test}}.$$ Do đó $C_p$ là **ước lượng không chệch của test MSE** khi $\hat\sigma^2$ không chệch. Với mô hình "đúng" (không bias), $\mathbb{E}(C_p^{\ast}) \approx d$ — quy tắc thực hành: chọn mô hình có $C_p^{\ast}$ gần đường $y = d$ nhất.
+
+```{r, echo=FALSE}
+par(family = "Times")
+
+
+fit <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustive")
+sum_fit <- summary(fit)
+
+# Lấy dữ liệu Cp và số lượng biến (d)
+cp_vals <- sum_fit$cp
+d_vals <- 1:length(cp_vals)
+
+# 3. Vẽ biểu đồ Cp
+par(mar = c(4, 4, 2, 2))
+
+# Xác định màu: Vùng underfit (thường là d nhỏ), vùng tốt (gần y=d)
+# Trong diabetes, các biến đầu tiên quan trọng nên Cp giảm rất nhanh
+colors <- ifelse(cp_vals > (d_vals + 2), "firebrick", "steelblue")
+
+plot(d_vals, cp_vals, pch = 19, col = colors, type = "b", lwd = 2,
+     xlab = "Số lượng biến (d)", ylab = expression(C[p]),
+     main = "Biểu đồ Mallows' Cp cho dữ liệu Diabetes",
+     ylim = c(0, max(cp_vals) + 5))
+
+# Vẽ đường tham chiếu y = d
+abline(0, 1, lty = 2, col = "grey40", lwd = 2)
+
+# Chú thích
+legend("topright", legend = c("Underfit (Bias cao)", "Không bias (Tốt)"),
+       col = c("firebrick", "steelblue"), pch = 19, bty = "n")
+text(2, cp_vals[2] + 2, "y=d", pos = 3, col = "grey40")
+```
+
+**Sử dụng khi**: (i) bài toán là **hồi quy tuyến tính cổ điển**;
+
+(ii) $n$ đủ lớn để $\hat\sigma^2$ ổn định; (iii) muốn có thước đo trực quan với "đường tham chiếu" $y = d$ để nhận diện bias. Với GLM, hỗn hợp, ... không dùng $C_p$ mà chuyển sang AIC.
+
+## AIC — Akaike Information Criterion
+
+AIC không đi từ phương sai như $C_p$, mà đi từ **Khoảng cách Kullback-Leibler** (khoảng cách giữa phân phối thực tế của dữ liệu và phân phối do mô hình dự báo).
+
+### Công thức và dẫn xuất
+
+$$\boxed{\;\mathrm{AIC} = -2 \ln L + 2d\;}$$
+
+- $L$: Hàm hợp lý (Likelihood Function)
+- $d$: Số biến trong mô hình con đang xét.
+
+Trong hồi quy Gauss, quy đổi tỷ lệ thuận thành tương tự như $C_p$: $$\mathrm{AIC} \approx \frac{1}{n\hat{\sigma}^2} (\mathrm{SSE} + 2d\hat{\sigma}^2)$$
+
+**Bước 1: Hàm Hợp lý Cực đại (Log-Likelihood)** Giả sử sai số có phân phối chuẩn, hàm Log-Likelihood của mô hình tuyến tính là: $$\ln L(\hat{\beta}, \hat{\sigma}^2) = -\frac{n}{2} \ln(2\pi) - \frac{n}{2} \ln(\hat{\sigma}^2) - \frac{1}{2\hat{\sigma}^2} \sum_{i=1}^n (y_i - X_i\hat{\beta})^2$$ $$\ln L = C - \frac{n}{2} \ln(\hat{\sigma}^2) - \frac{SSE}{2\hat{\sigma}^2}$$
+
+**Bước 2: Nguyên lý Akaike** Hirotugu Akaike chứng minh rằng giá trị lớn nhất của Log-likelihood trên tập Training là một ước lượng chệch của "lượng thông tin thực sự". Độ chệch này xấp xỉ bằng số lượng tham số $d$. Công thức AIC tiêu chuẩn: $$AIC = -2 \ln L + 2d$$
+
+**Bước 3: Quy đổi AIC về dạng SSE trong Hồi quy tuyến tính** Bỏ qua các hằng số không ảnh hưởng đến việc so sánh, nếu giả định $\hat{\sigma}^2$ là hằng số cố định (ước lượng từ mô hình đầy đủ), thế $\ln L$ vào, ta được dạng xấp xỉ tỷ lệ: $$AIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + 2d\hat{\sigma}^2)$$
+
+### Bản chất thống kê: xấp xỉ Kullback–Leibler
+
+Xuất phát từ lý thuyết thông tin, AIC xấp xỉ khoảng cách Kullback-Leibler để tìm mô hình gần nhất với cơ chế sinh dữ liệu. Trong hồi quy tuyến tính, AIC tương đương hoàn toàn với Mallows' $C_p$.
+
+- **Lack-of-fit:** Đại lượng $-2 \ln L$ (hoặc tương đương $\mathrm{SSE}$).
+- **Penalty:** Đại lượng $2d$ (hoặc tương đương $2d\hat{\sigma}^2$). Mức phạt cố định bằng 2 cho mỗi tham số độc lập.
+
+### Ứng dụng
+
+Áp dụng được cho mọi mô hình MLE: GLM, hỗn hợp, time series, sống còn ... — đây là điểm mạnh quan trọng nhất so với $C_p$.
+
+- Ưu điểm: cơ sở lý thuyết vững (K–L); áp dụng được rất rộng; **hiệu quả tiệm cận** — khi $n \to \infty$, sai số dự báo của mô hình do AIC chọn tiến tới sai số của mô hình tốt nhất có thể.
+
+- Nhược điểm: khi $n$ nhỏ AIC *thiên về mô hình lớn* (penalty $2K$ không đủ mạnh); nếu mô hình thật thực sự nằm trong tập ứng viên, AIC *không nhất quán* — xác suất chọn đúng không tiến tới 1.
+
+### Nguyên lý lựa chọn biến tối ưu dựa trên AIC
+
+**Nguyên lý chọn subset size**: Khoảng cách Kullback–Leibler đo lường "mức độ mất mát thông tin" giữa phân phối thật $f$ và mô hình $g$: $$\mathrm{KL}(f \,\|\, g) = \mathbb{E}_f\!\left[\log\frac{f(Y)}{g(Y\mid\theta)}\right].$$
+
+- $f(Y)$: phân phối xác suất thật của dữ liệu.
+- $g(Y∣θ)$: likelihood mà model gán cho dữ liệu Y
+- $Ef[⋅]$: Kỳ vọng theo phân phối thật f
+
+Để mô hình tốt nhất, ta phải chọn $θ$ sao cho khoảng cách K-L là cực tiểu. Tức $\mathbb{E}_f[\log g(Y\mid\hat\theta)]$ đạt cực đại -\> $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$ phải nhỏ nhất.
+
+```{r, echo=FALSE}
+
+fit <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustive")
+
+# Tính AIC cho từng mô hình tối ưu ở mỗi số lượng biến
+aic_vals <- numeric(10)
+for (i in 1:10) {
+  # Lấy tên biến (bỏ Intercept)
+  vars_i <- names(coef(fit, i))[-1] 
+  
+  # Ghép công thức và chạy mô hình
+  formula_i <- as.formula(paste("target ~", paste(vars_i, collapse = " + ")))
+  model_i <- lm(formula_i, data = train_data)
+  
+  # Lưu AIC
+  aic_vals[i] <- AIC(model_i)
+}
+
+d_vals <- 1:10
+
+par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
+
+# Vẽ đường AIC
+plot(d_vals, aic_vals, type = "b", lwd = 2, col = "steelblue", pch = 19,
+     xlab = "Số lượng biến trong mô hình (d)", 
+     ylab = "Giá trị AIC",
+     main = "Sự biến thiên của AIC theo số lượng biến")
+
+# Tìm vị trí đạt giá trị NHỎ NHẤT (cực tiểu K-L Divergence)
+opt_d_aic <- which.min(aic_vals)
+
+# Kẻ đường tham chiếu và khoanh tròn điểm tối ưu
+abline(v = opt_d_aic, lty = 2, col = "grey50", lwd = 2)
+points(opt_d_aic, aic_vals[opt_d_aic], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
+
+# Thêm chú giải
+legend("topright", 
+       legend = c("AIC", paste("Tối ưu K-L Divergence (d =", opt_d_aic, ")")),
+       lty = c(1, 2), lwd = c(2, 2), pch = c(19, NA),
+       col = c("steelblue", "grey50"), bty = "n")
+```
+
+AIC chính là **xấp xỉ không chệch** của $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$, cộng với một hằng số không phụ thuộc mô hình. Mô hình có AIC nhỏ nhất là mô hình *gần nhất* với cơ chế sinh dữ liệu theo nghĩa K–L. Trong hồi quy Gauss, AIC và $C_p$ **tỷ lệ tuyến tính** — chọn cùng một mô hình.
+
+Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/K < 40$, dùng $\mathrm{AIC}_C = \mathrm{AIC} + \frac{2K(K+1)}{n-K-1}$ (Hurvich & Tsai, 1989) [@Sheather2009, §7.1.3].
+
+## BIC — Bayesian Information Criterion
+
+BIC tiếp cận bài toán chọn biến dưới góc nhìn hoàn toàn khác: Xác suất Hậu nghiệm của Bayes. Điểm mấu chốt cấu thành nên hình phạt $\log(n)$ phức tạp của BIC chính là kỹ thuật toán học mang tên **Xấp xỉ Laplace (Laplace Approximation)**.
+
+### Bổ sung kiến thức: Xấp xỉ Laplace
+
+- Trong thống kê Bayes, khi ta muốn tính xác suất của một mô hình, ta phải tính một tích phân khổng lồ trên không gian nhiều chiều để loại bỏ các tham số nhiễu (gọi là Marginal Likelihood). Tích phân này thường không có nghiệm giải tích (không tính trực tiếp được).
+- **Ý tưởng của Laplace:** Khi kích thước mẫu $n$ tiến ra vô cùng ($n \to \infty$), theo định lý giới hạn trung tâm, hàm mật độ xác suất hậu nghiệm sẽ hội tụ và co cụm lại cực kỳ nhọn xung quanh một điểm duy nhất là điểm cực đại (điểm MAP hoặc ước lượng hợp lý cực đại MLE $\hat{\theta}$).
+- Vì đồ thị hàm số lúc này trông giống hệt như một chiếc chuông chuẩn (Gaussian), Laplace đề xuất thay thế toàn bộ hàm số phức tạp dưới dấu tích phân bằng một hàm mũ bậc hai (Phân phối chuẩn) tương đương tại đỉnh để tính toán tích phân một cách dễ dàng.
+
+### Công thức
+
+BIC được thiết kế để chọn mô hình có xác suất hậu nghiệm cao nhất trong số các mô hình ứng viên. Xác suất này được tính bằng cách tích phân toàn bộ không gian tham số $\theta$ để loại bỏ sự phụ thuộc vào các tham số không quan trọng, chỉ giữ lại thông tin về mô hình và dữ liệu.
+
+Schwarz (1978): $$\boxed{\;\mathrm{BIC} = -2\log L(\hat\theta\mid Y) + d\log n\;} \tag{9}$$ Với hồi quy Gauss: $$\mathrm{BIC} = n\log\!\left(\frac{\mathrm{SSE}}{n}\right) + d\log n. \tag{10}$$
+
+- $n$: sample size — cỡ mẫu, tổng số quan sát trong bộ dữ liệu.
+- $d/K$: Số biến trong mô hình. (K thường dùng trong lý thuyết thông tin/Bayes, d dùng trong hồi quy)
+
+#### Chứng minh toán học: Dẫn xuất công thức BIC từ lý thuyết thống kê (góc nhìn Xấp xỉ Laplace)
+
+- **Bước 0: Mục tiêu của BIC**
+
+- **Bước 1: Thiết lập tích phân Hàm hợp lý biên**
+
+  - Xác suất để dữ liệu được sinh ra từ mô hình $\mathcal{M}$ được tính bằng tích phân: $$P(Data | \mathcal{M}) = \int \exp\big(\ln P(Data | \theta, \mathcal{M})\big) P(\theta | \mathcal{M}) d\theta$$
+  - Ký hiệu hàm log-likelihood là $L_n(\theta) = \ln P(Data | \theta, \mathcal{M})$.
+
+- **Bước 2: Khai triển Taylor bậc hai tại điểm cực đại** $\hat{\theta}$
+
+  - Khai triển chuỗi Taylor của hàm $L_n(\theta)$ xung quanh điểm ước lượng hợp lý cực đại $\hat{\theta}$: $$L_n(\theta) \approx L_n(\hat{\theta}) + \nabla L_n(\hat{\theta})^T (\theta - \hat{\theta}) + \frac{1}{2} (\theta - \hat{\theta})^T \nabla^2 L_n(\hat{\theta}) (\theta - \hat{\theta})$$
+  - Vì $\hat{\theta}$ là điểm cực đại (đỉnh parabol), nên đạo hàm bậc nhất tại đây bằng không: $\nabla L_n(\hat{\theta}) = 0$. Thành phần thứ hai biến mất.
+  - Gọi ma trận đạo hàm bậc hai (Ma trận Hessian) tại đỉnh là $H = -\nabla^2 L_n(\hat{\theta})$. Hàm số rút gọn thành: $$L_n(\theta) \approx L_n(\hat{\theta}) - \frac{1}{2} (\theta - \hat{\theta})^T H (\theta - \hat{\theta})$$
+
+- **Bước 3: Thực hiện tích phân Gauss (Gaussian Integration)**
+
+  - Thế hàm xấp xỉ Taylor vào dấu tích phân ban đầu, đưa hằng số $\exp(L_n(\hat{\theta}))$ ra ngoài: $$P(Data | \mathcal{M}) \approx \exp\big(L_n(\hat{\theta})\big) \int \exp\left( - \frac{1}{2} (\theta - \hat{\theta})^T H (\theta - \hat{\theta}) \right) P(\theta | \mathcal{M}) d\theta$$
+  - Khi $n$ rất lớn, phân phối Prior $P(\theta | \mathcal{M})$ coi như phẳng và hằng số so với sự nhọn của đỉnh hàm hợp lý, ta đưa nó ra ngoài như một hằng số.
+  - Phần tích phân còn lại chính là dạng tích phân Gauss đa biến chuẩn hóa. Kết quả toán học của tích phân này bằng: $$\int \exp\left( - \frac{1}{2} (\theta - \hat{\theta})^T H (\theta - \hat{\theta}) \right) d\theta = \frac{(2\pi)^{d/2}}{\sqrt{\det(H)}}$$
+  - Suy ra: $P(Data | \mathcal{M}) \approx \exp\big(L_n(\hat{\theta})\big) \cdot \frac{(2\pi)^{d/2}}{\sqrt{\det(H)}} \cdot P(\hat{\theta} | \mathcal{M})$
+
+- **Bước 4: Lấy Log tự nhiên để phá bỏ hàm mũ** $$\ln P(Data | \mathcal{M}) \approx L_n(\hat{\theta}) - \frac{1}{2} \ln \det(H) + \frac{d}{2}\ln(2\pi) + \ln P(\hat{\theta} | \mathcal{M})$$
+
+- **Bước 5: Cô lập kích thước mẫu** $n$ để rút gọn tiệm cận
+
+  - Ma trận Hessian $H$ tổng hợp thông tin từ $n$ quan sát độc lập, do đó mỗi phần tử của ma trận $H$ tăng trưởng tuyến tính theo $n$. Ta có thể viết $H = n \cdot \mathcal{I}$, trong đó $\mathcal{I}$ là ma trận thông tin Fisher trung bình trên một quan sát.
+  - Sử dụng tính chất của định thức ma trận vuông cấp $d$: $\det(H) = \det(n \cdot \mathcal{I}) = n^d \cdot \det(\mathcal{I})$.
+  - Lấy logarit cho định thức này: $$\ln \det(H) = \ln(n^d \cdot \det(\mathcal{I})) = d \ln(n) + \ln \det(\mathcal{I})$$
+  - Thế ngược lại vào phương trình Bước 4 và gom tất cả các thành phần không phụ thuộc vào $n$ (như $\ln \det(\mathcal{I}), \ln(2\pi)$) thành hằng số $O(1)$: $$\ln P(Data | \mathcal{M}) \approx L_n(\hat{\theta}) - \frac{d}{2} \ln(n) + O(1)$$
+
+- **Bước 6: Định hình chỉ số BIC hoàn chỉnh**
+
+  - Để đồng bộ với AIC (bài toán tìm giá trị nhỏ nhất), ta nhân toàn bộ phương trình với $-2$: $$BIC = -2 L_n(\hat{\theta}) + d \ln(n)$$
+  - Trong điều kiện hồi quy tuyến tính chuẩn, $-2 L_n(\hat{\theta})$ quy đổi tỷ lệ tương đương với $\frac{SSE}{\hat{\sigma}^2}$, dẫn đến hệ thức phạt quen thuộc: $$BIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + \ln(n) d \hat{\sigma}^2)$$
+
+Hệ số $\log(n)$ của BIC là kết quả tất yếu trích xuất từ **định thức của ma trận thông tin đạo hàm bậc hai khi thực hiện xấp xỉ hình học chuông Laplace** cho hàm xác suất.
+
+### Bản chất thống kê: xấp xỉ Bayes marginal likelihood
+
+Dựa trên xác suất hậu nghiệm Bayes, BIC tìm kiếm mô hình "đúng" nhất sinh ra dữ liệu. Mức phạt của BIC trích xuất từ xấp xỉ Laplace của hàm hợp lý biên, rất khắt khe khi mẫu $n$ lớn.
+
+- **Lack-of-fit:** Đại lượng $-2 \ln L$ (hoặc tương đương $\mathrm{SSE}$).
+- **Penalty:** Đại lượng $d\log(n)$ (hoặc tương đương $d\log(n)\hat{\sigma}^2$). Hình phạt tăng trưởng theo hàm logarit của $n$.
+
+BIC xuất phát từ *xấp xỉ Laplace* của marginal likelihood $P(Y\mid M_i)$ — xác suất hậu nghiệm của mô hình $M_i$ với tiên nghiệm đều trên tập mô hình. Khi $n\to\infty$, $-2\log P(Y\mid M_i) \approx \mathrm{BIC}_i + O(1)$.
+
+Đặt $\Delta\mathrm{BIC}_i = \mathrm{BIC}_i - \min_j\mathrm{BIC}_j$: $$P(M_i \mid \text{data}) \;\approx\; \frac{\exp(-\Delta\mathrm{BIC}_i/2)}
+{\sum_r \exp(-\Delta\mathrm{BIC}_r/2)}.$$ Đây là cách diễn giải xác suất *rất tự nhiên* — không có ở AIC hay $C_p$.
+
+### Ứng dụng
+
+Phổ biến trong: chọn mô hình thống kê *giải thích* (econometrics, biostat), chọn số cụm trong mixture model, chọn bậc trong time series, model averaging (qua $\Delta$BIC).
+
+- Ưu điểm: có diễn giải Bayes; **nhất quán** — nếu mô hình thật thuộc tập ứng viên, $P(\text{BIC chọn đúng}) \to 1$ khi $n\to\infty$; chọn mô hình *gọn*, dễ trình bày khoa học.
+
+- Nhược điểm: với $n$ nhỏ, penalty $\log n$ có thể *quá mạnh* và loại bỏ biến hữu ích; giả định "mô hình thật nằm trong tập ứng viên" thường không thực tế — khi đó tính nhất quán mất ý nghĩa và AIC hoạt động tốt hơn (Yang, 2005).
+
+### Nguyên lý lựa chọn biến tối ưu dựa trên BIC
+
+**Nguyên lý chọn subset size**: Cũng giống như AIC, khi thêm biến thì giảm SSE. Tuy nhiên, nếu dữ liệu có số mẫu lớn sẽ cộng thêm $log(n)p$ giá trị. Nếu cỡ mẫu $n=1000$ thì $log(1000) \approx\ 6.9$ là thêm xấp xỉ 7 lần số biến.
+
+Chọn mô hình có BIC nhỏ nhất tức là biến mới đưa vào phải cực kỳ có ý nghĩa giúp SSE giảm một lượng lớn để bù cho phần tăng thêm của $log$.
+
+```{r, echo=FALSE}
+
+
+fit <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustive")
+
+
+bic_vals <- numeric(10)
+for (i in 1:10) {
+  # Lấy tên biến (bỏ Intercept)
+  vars_i <- names(coef(fit, i))[-1] 
+  
+  # Ghép công thức và chạy mô hình
+  formula_i <- as.formula(paste("target ~", paste(vars_i, collapse = " + ")))
+  model_i <- lm(formula_i, data = train_data)
+  
+  # Lấy giá trị BIC (Chỉ thay hàm AIC() thành BIC() ở đây)
+  bic_vals[i] <- BIC(model_i)
+}
+
+d_vals <- 1:10
+
+
+par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
+
+# Vẽ đường BIC (Mình đổi sang màu purple để phân biệt với AIC)
+plot(d_vals, bic_vals, type = "b", lwd = 2, col = "purple", pch = 19,
+     xlab = "Số lượng biến trong mô hình (d)", 
+     ylab = "Giá trị BIC",
+     main = "Sự biến thiên của BIC theo số lượng biến")
+
+# Tìm vị trí đạt giá trị NHỎ NHẤT
+opt_d_bic <- which.min(bic_vals)
+
+# Kẻ đường tham chiếu và khoanh tròn điểm tối ưu
+abline(v = opt_d_bic, lty = 2, col = "grey50", lwd = 2)
+points(opt_d_bic, bic_vals[opt_d_bic], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
+
+# Thêm chú giải
+legend("topright", 
+       legend = c("BIC", paste("Điểm cực tiểu (d =", opt_d_bic, ")")),
+       lty = c(1, 2), lwd = c(2, 2), pch = c(19, NA),
+       col = c("purple", "grey50"), bty = "n")
+```
+
+Sử dụng khi (i) mục tiêu là **giải thích / xác định mô hình đúng** (causal-inspired, khoa học cơ bản);
+
+(ii) $n$ tương đối lớn ($n \ge 30$ là tối thiểu thực hành);
+
+(iii) cần một mô hình *gọn, ít biến* để diễn giải;
+
+(iv) muốn báo cáo *xác suất hậu nghiệm* mô hình.
+
+## Khi nào dùng tiêu chuẩn nào?
+
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+\textbf{Tiêu chuẩn} & \textbf{Penalty} & \textbf{Mục tiêu} & \textbf{Tính chất} \\
+\hline
+$R^2$         & 0 (đơn điệu)    & Mô tả khớp        & Không dùng chọn biến \\
+$R^2_{adj}$   & $1/(n-p-1)$ ẩn  & Giải thích thô    & Yếu — xu hướng over-fit \\
+$C_p$         & $+2d$           & Dự báo (Gauss)    & Ước lượng test MSE \\
+AIC           & $+2K$           & Dự báo (mọi MLE)  & Hiệu quả tiệm cận \\
+BIC           & $+K\log n$      & Mô hình "đúng"    & Nhất quán \\
+\hline
+\end{tabular}
+\end{center}
+
+Hai trục quyết định:
+
+\textbf{1. Mục tiêu là dự báo hay giải thích?} Dự báo $\Rightarrow$ AIC / $C_p$. Giải thích / tìm "true model" $\Rightarrow$ BIC.
+
+\textbf{2. Phạm vi mô hình.} Hồi quy tuyến tính Gauss thuần tuý $\Rightarrow$ có thể dùng $C_p$ (có "đường tham chiếu"). Mô hình tổng quát hơn (GLM, hỗn hợp, ...) $\Rightarrow$ AIC hoặc BIC.
+
+Trong thực hành, các tác giả như Burnham & Anderson (2004) khuyến nghị **không chọn cứng** theo một tiêu chuẩn duy nhất mà *liệt kê* mô hình được mỗi tiêu chuẩn ưu tiên, đối chiếu với chẩn đoán dư (residual diagnostics) và tính diễn giải, rồi chọn mô hình *đơn giản nhất nằm trong vùng "tốt"* của tất cả các tiêu chuẩn — nguyên lý **parsimony** (tiết kiệm).
+
+Trên thực tế, các tiêu chuẩn trên có thể đưa ra những mô hình tối ưu khác nhau. Để minh họa sự khác biệt này, tiến hành áp dụng phương pháp Best Subset Selection trên bộ dữ liệu diabetes và tổng hợp kết quả lựa chọn mô hình theo từng tiêu chuẩn.
+
+## Tổng hợp kết quả lựa chọn biến theo các tiêu chuẩn
+
+
+```{r}
+best_subset <- regsubsets(target ~ ., data = train_data, nvmax = 10) 
+best_summary <- summary(best_subset)
+
+# Tính AIC cho mô hình tốt nhất ở từng số lượng biến
+aic_values <- numeric(10)
+
+for (i in 1:10) {
+  vars_i <- names(coef(best_subset, i))[-1]
+  formula_i <- as.formula(paste("target ~", paste(vars_i, collapse = " + ")))
+  model_i <- lm(formula_i, data = train_data)
+  aic_values[i] <- AIC(model_i)
+}
+
+# table tổng hợp các criteria
+criteria_table <- data.frame(
+  Subset_size = 1:10,
+  R2 = best_summary$rsq,
+  Adj_R2 = best_summary$adjr2,
+  Cp = best_summary$cp,
+  AIC = aic_values,
+  BIC = best_summary$bic
+)
+
+
+round(criteria_table, 4)
+```
+
+Bảng tóm tắt mô hình tối ưu theo từng tiêu chí:
+
+```{r}
+best_r2_size <- which.max(best_summary$rsq)
+best_adjr2_size <- which.max(best_summary$adjr2)
+best_cp_size <- which.min(best_summary$cp)
+best_aic_size <- which.min(aic_values)
+best_bic_size <- which.min(best_summary$bic)
+
+vars_r2 <- names(coef(best_subset, best_r2_size))[-1]
+vars_adjr2 <- names(coef(best_subset, best_adjr2_size))[-1]
+vars_cp <- names(coef(best_subset, best_cp_size))[-1]
+vars_aic <- names(coef(best_subset, best_aic_size))[-1]
+vars_bic <- names(coef(best_subset, best_bic_size))[-1]
+
+best_model_summary <- data.frame(
+  Criterion = c(
+    "R2 lon nhat",
+    "Adjusted R2 lon nhat",
+    "Cp nho nhat",
+    "AIC nho nhat",
+    "BIC nho nhat"
+  ),
+  Subset_size = c(
+    best_r2_size,
+    best_adjr2_size,
+    best_cp_size,
+    best_aic_size,
+    best_bic_size
+  ),
+  Predictors = c(
+    paste(vars_r2, collapse = ", "),
+    paste(vars_adjr2, collapse = ", "),
+    paste(vars_cp, collapse = ", "),
+    paste(vars_aic, collapse = ", "),
+    paste(vars_bic, collapse = ", ")
+  ),
+  Value = c(
+    round(max(best_summary$rsq),4),
+    round(max(best_summary$adjr2),4),
+    round(min(best_summary$cp),4),
+    round(min(aic_values),4),
+    round(min(best_summary$bic),4)
+  )
+)
+
+knitr::kable(best_model_summary,
+             caption = "Mô hình tối ưu theo từng tiêu chuẩn")
+```
+
+Kết quả trên cho thấy mỗi tiêu chuẩn có thể lựa chọn mô hình khác nhau. 
+Tiêu chuẩn $R^2$ có xu hướng chọn mô hình nhiều biến nhất vì $R^2$ không giảm khi thêm biến vào mô hình. Trong khi đó, Adjusted $R^2$, Mallows' $C_p$, AIC và BIC đều có cơ chế phạt đối với độ phức tạp của mô hình nên thường lựa chọn các mô hình gọn hơn.
+
+Đối với bộ dữ liệu diabetes, các mô hình được lựa chọn bởi Adjusted $R^2$, $C_p$, AIC và BIC có số lượng biến tương đối gần nhau. Điều này cho thấy các biến được lựa chọn có mức độ ổn định nhất định và chứa phần lớn thông tin cần thiết để giải thích biến phản hồi. Các kết quả này sẽ được sử dụng để đối chiếu với các thủ tục lựa chọn biến ở phần tiếp theo.
+
+```{=html}
+<!-- 
+## 7. Kết luận
+
+Năm tiêu chuẩn $R^2, R^2_{adj}, C_p$, AIC, BIC khác nhau ở *cách định
+nghĩa độ phức tạp* và *mục tiêu thống kê đằng sau penalty*. $R^2$ là
+thước đo mô tả, không phù hợp chọn biến; $R^2_{adj}$ là phiên bản có
+penalty ẩn nhưng yếu; $C_p$ là ước lượng không chệch của test MSE; AIC
+là xấp xỉ khoảng cách Kullback–Leibler, tương đương $C_p$ trong hồi quy
+Gauss; BIC là xấp xỉ Bayes marginal likelihood, hướng đến *true model*
+và có tính nhất quán. Việc *hiểu nguồn gốc thống kê* của từng penalty
+cho phép người làm mô hình chọn tiêu chuẩn phù hợp với mục tiêu — dự báo
+hay giải thích — và bảo vệ lựa chọn đó trước phản biện.
+
+-->
+```
