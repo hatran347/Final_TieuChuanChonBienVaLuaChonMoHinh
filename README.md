@@ -1,16 +1,15 @@
-# LuaChonMoHinh-LuaChonBien
-Lựa chọn mô hình &amp; lựa chọn biến - Bài làm nhóm 8
+# Chủ đề 4: Lựa chọn mô hình và lựa chọn biến
+**Môn học:** Mô hình hóa thống kê  
+**Bộ dữ liệu:** Diabetes (package lars)
 
-File ReadMe này sẽ gồm câu hỏi thảo luận & phần phân công công việc mà cô yêu cầu  -- cái này chắc điền vào s khi nộp ha :)
+## Giới thiệu
 
+Báo cáo trình bày các phương pháp tiêu chuẩn lựa chọn biến và phương pháp lựa chọn mô hình hồi quy tuyến tính, thực nghiệm trên bộ dữ liệu Diabetes. Các mô hình được đánh giá bằng các tiêu chuẩn như R², Adjusted R², Mallows' Cp, AIC, BIC, đồng thời được kiểm định và đánh giá độ ổn định thông qua các kỹ thuật Cross-Validation.
 
-Mọi người sửa đúng file phần của mình trong folder parts.
+Để chạy toàn bộ các đoạn code trong báo cáo này, cần chuẩn bị các thư viện sau:
 
-Không sửa main.Rmd.
-
-Sửa xong nhớ Commit changes.
-
-Sau khi mọi người xong thì tải về knit html
+install.packages(c( "tidyverse", "leaps", "boot", "lars", "knitr", "kableExtra","scales","corrplot",
+"ggplot2", "tidyr"))
 
 ## Phân công công việc và mức độ đóng góp
 
@@ -22,5 +21,5 @@ Sau khi mọi người xong thì tải về knit html
 
 ## Câu hỏi thảo luận
 
-1. Khi xây dựng mô hình, tại sao người xây dựng lại phải chia dataset ra thành các tập train và test và tại sao tỉ lệ thường sử dụng là 80-20 hoặc 70-30. Vậy trong trường hợp dữ liệu có đến khoảng 10 triệu records thì có nhất thiết phải chia tỉ lệ này hay không.
+1. Khi xây dựng mô hình, tại sao người ta lại phải chia dataset ra thành các tập train và test và tại sao tỉ lệ thường sử dụng là 80-20 hoặc 70-30. Vậy trong trường hợp dữ liệu có đến khoảng 10 triệu records thì có nhất thiết phải chia tỉ lệ này hay không.
 2. Forward và Backward có vẻ như là đang làm ngược chiều nhau. Giả sử trên cùng 1 tập dataset, áp dụng 2 phương pháp Backward và Forward thì kết quả sẽ như thế nào? Giả sử bộ dữ liệu có 2 biến X1 và X2 tương quan với nhau mạnh, và cả 2 cùng tác động lên Y. Phân tích sai lầm của Forward và Backward có thể mắc phải với cặp biến này?

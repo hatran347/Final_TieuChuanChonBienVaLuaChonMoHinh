@@ -1,18 +1,18 @@
-# Kiểm chứng chéo Cross - Validation
+# Kiểm chứng chéo (Cross - Validation)
 
 Khi huấn luyện mô hình, cần phân biệt giữa **Training Error** và **Test Error**. **Training Error** là sai số được tính trên chính tập dữ liệu dùng để huấn luyện mô hình, trong khi **Test Error** là sai số khi mô hình dự đoán trên dữ liệu mới chưa từng được sử dụng trong quá trình huấn luyện. Trong thực tế, **Test Error** thường quan trọng hơn vì nó phản ánh khả năng tổng quát hóa của mô hình.
 
-**Training Error** thường có xu hướng thấp hơn thực tế, do mô hình đã được xây dựng dựa trên chính dữ liệu đó. Do đó, **Training Error** thường không phản ánh chính xác khả năng dự đoán của mô hình trên dữ liệu mới. **Cross-Validation** là một phương pháp dùng để ước lượng **Test Error** bằng cách chia dữ liệu thành nhiều phần, lần lượt dùng một phần để kiểm tra và các phần còn lại để huấn luyện. Cách làm này giúp đánh giá mô hình ổn định hơn khi chưa có một tập kiểm thử độc lập.
+**Training Error** thường có xu hướng thấp hơn thực tế, do mô hình đã được xây dựng dựa trên chính dữ liệu đó. Do đó, **Training Error** thường không phản ánh chính xác khả năng dự đoán của mô hình trên dữ liệu mới. **Cross-Validation** là một phương pháp dùng để ước lượng **Test Error** bằng cách chia dữ liệu thành nhiều phần, lần lượt dùng một phần để kiểm tra và các phần còn lại để huấn luyện. Cách làm này giúp đánh giá mô hình ổn định hơn khi chưa có một tập kiểm thử độc lập [@James2023].
 
-## Phương pháp Tập kiểm chứng độc lập (The Validation Set Approach)
+## Tập kiểm chứng độc lập (The Validation Set Approach)
 
 ### Cơ chế
 
-- Chia ngẫu nhiên dữ liệu gốc thành hai phần độc lập: **Tập huấn luyện** (Training Set) chiếm phần lớn dùng để xây dựng mô hình và **Tập kiểm chứng** (Validation set / Hold-out set) làphần còn lại không cho mô hình biết trước, chỉ dùng để tính lỗi sau khi mô hình đã học xong.
+- Chia ngẫu nhiên dữ liệu gốc thành hai phần độc lập: **Tập huấn luyện** (Training Set) chiếm phần lớn dùng để xây dựng mô hình và **Tập kiểm chứng** (Validation set / Hold-out set) là phần còn lại không cho mô hình biết trước, dùng để tính lỗi sau khi mô hình đã học xong [@James2023].
 
 - Mô hình học trên tập Train và đo lường sai số (MSE/RMSE) trên tập Validation.
 
-*Bản chất toán học:* Tập dữ liệu kiểm chứng hoàn toàn không tham gia vào bất kỳ một bước nào trong quá trình tối ưu hóa các hệ số $\beta$ hay trọng số của mô hình. Do đó, điểm số lỗi thu được trên tập này phản ánh năng lực của mô hình khi gặp dữ liệu lạ. Phương pháp **chỉ yêu cầu khớp (fit) mô hình đúng 1 lần duy nhất** trên tập huấn luyện.
+**Bản chất toán học:** Tập dữ liệu kiểm chứng hoàn toàn không tham gia vào bất kỳ một bước nào trong quá trình tối ưu hóa các hệ số $\beta$ hay trọng số của mô hình. Do đó, điểm số lỗi thu được trên tập này phản ánh năng lực của mô hình khi gặp dữ liệu lạ. Phương pháp **chỉ yêu cầu khớp (fit) mô hình đúng 1 lần duy nhất** trên tập huấn luyện.
 
 ```{r, echo= FALSE}
 final_formula <- formula(final_model)
@@ -25,7 +25,8 @@ train_MSE <- mean((train_data$target - pred_train)^2)
 train_RMSE <- sqrt(train_MSE)
 train_MAE <- mean(abs(train_data$target - pred_train))
 
-train_R2 <- 1 - sum((train_data$target - pred_train)^2) /sum((train_data$target - mean(train_data$target))^2)
+train_R2 <- 1 - sum((train_data$target - pred_train)^2) /
+  sum((train_data$target - mean(train_data$target))^2)
 
 train_results <- data.frame(
   Method = "Train error",
@@ -58,7 +59,7 @@ test_results <- data.frame(
 
 test_results
 ```
-Mô hình đạt RMSE = 53.96 trên tập train và RMSE = 52.55 trên tập test. Đồng thời, giá trị (R^2) trên tập train và test lần lượt là 0.5073 và 0.5401. Kết quả cho thấy mô hình có khả năng dự báo trên tập mới.
+Mô hình đạt RMSE = 53.96 trên tập train và RMSE = 52.55 trên tập test. Đồng thời, giá trị ($R^2$) trên tập train và test lần lượt là 0.5073 và 0.5401. Kết quả cho thấy mô hình có khả năng dự báo trên tập mới.
 
 
 ### Phân tích ưu và nhược điểm:
@@ -69,15 +70,15 @@ Tối ưu hóa hiệu năng và chi phí tính toán khi chỉ yêu cầu khớp
 
 #### Nhược điểm
 
-- *Ước lượng sai số có phương sai cao (High Variance):* Kết quả đánh giá mô hình, chẳng hạn như MSE hoặc RMSE, phụ thuộc khá nhiều vào cách chia dữ liệu ban đầu. Nếu tập validatio/test chứa nhiều quan sát nhiễu hoặc không đại diện tốt cho toàn bộ dữ liệu, sai số ước lượng có thể cao hơn thực tế. Ngược lại, nếu tập validation/test tương đối “dễ dự đoán”, sai số có thể bị đánh giá thấp. Vì vậy, kết quả có thể thay đổi đáng kể giữa các lần chia dữ liệu khác nhau.
+- Ước lượng sai số có phương sai cao (High Variance): Kết quả đánh giá mô hình (MSE hoặc RMSE), phụ thuộc khá nhiều vào cách chia dữ liệu ban đầu. Nếu tập validation/test chứa nhiều quan sát nhiễu hoặc không đại diện tốt cho toàn bộ dữ liệu, sai số ước lượng có thể cao hơn thực tế. Ngược lại, nếu tập validation/test tương đối “dễ dự đoán”, sai số có thể bị đánh giá thấp. Vì vậy, kết quả có thể thay đổi đáng kể giữa các lần chia dữ liệu khác nhau.
 
-- *Có thể đánh giá sai số kiểm thử cao hơn thực tế (High Bias):* Trong phương pháp này, mô hình chỉ được huấn luyện trên một phần dữ liệu, thay vì toàn bộ dữ liệu hiện có. Do kích thước tập huấn luyện nhỏ hơn, mô hình có thể học được ít thông tin hơn, làm cho sai số trên tập validation có xu hướng cao hơn so với trường hợp mô hình được huấn luyện trên toàn bộ dữ liệu.
+- Có thể đánh giá sai số kiểm thử cao hơn thực tế (High Bias): Mô hình chỉ được huấn luyện trên một phần dữ liệu, thay vì toàn bộ dữ liệu hiện có. Do kích thước tập huấn luyện nhỏ hơn, mô hình có thể học được ít thông tin hơn, làm cho sai số trên tập validation có xu hướng cao hơn so với trường hợp mô hình được huấn luyện trên toàn bộ dữ liệu.
 
-- *Không tận dụng hết dữ liệu:* Một phần dữ liệu được tách ra để làm tập validation nên không được dùng trong quá trình huấn luyện mô hình. Điều này có thể làm giảm lượng thông tin mà mô hình học được, đặc biệt khi kích thước mẫu ban đầu còn hạn chế.
+- Không tận dụng hết dữ liệu: Một phần dữ liệu được tách ra để làm tập validation nên không được dùng trong quá trình huấn luyện mô hình. Điều này có thể làm giảm lượng thông tin mà mô hình học được, đặc biệt khi kích thước mẫu ban đầu còn hạn chế.
 
-## Kiểm chứng chéo loại một (Leave-One-Out Cross-Validation - LOOCV)
+## Kiểm chứng chéo loại một (LOOCV)
 
-Để hạn chế nhược điểm lãng phí dữ liệu của phương pháp tập kiểm chứng, **Leave-One-Out Cross-Validation (LOOCV)** sử dụng gần như toàn bộ dữ liệu để huấn luyện mô hình ở mỗi lần lặp.
+Để hạn chế nhược điểm lãng phí dữ liệu của phương pháp tập kiểm chứng, **LOOCV** sử dụng gần như toàn bộ dữ liệu để huấn luyện mô hình ở mỗi lần lặp.
 
 ### Cơ chế
 
@@ -118,19 +119,19 @@ Nhược điểm lớn nhất của LOOCV là chi phí tính toán, phải khớ
 
 $$CV_{(n)} = \frac{1}{n} \sum_{i=1}^{n} \left( \frac{y_i - \hat{y}_i}{1 - h_i} \right)^2$$
 
-Trong đó, $y_i - \hat{y}_i$ là **phần dư (residual)** khi mô hình được khớp trên toàn bộ dữ liệu, còn $h_i$ là **giá trị đòn bẩy (leverage)** của quan sát thứ $i$, được lấy từ đường chéo của **ma trận hat (hat matrix)**.
+Trong đó, $y_i - \hat{y}_i$ là **phần dư (residual)** khi mô hình được khớp trên toàn bộ dữ liệu, còn $h_i$ là **giá trị đòn bẩy (leverage)** của quan sát thứ $i$, được lấy từ đường chéo của **ma trận hat (hat matrix)** [@James2023].
 
 **Giải thích công thức:**
 
-Khi mô hình được khớp trên toàn bộ dữ liệu, quan sát thứ $i$ cũng tham gia vào quá trình ước lượng hệ số. Vì vậy, phần dư $y_i - \hat{y}_i$ thường nhỏ hơn so với trường hợp quan sát đó bị loại ra khỏi tập huấn luyện như trong LOOCV.
+- Khi mô hình được khớp trên toàn bộ dữ liệu, quan sát thứ $i$ cũng tham gia vào quá trình ước lượng hệ số. Vì vậy, phần dư $y_i - \hat{y}_i$ thường nhỏ hơn so với trường hợp quan sát đó bị loại ra khỏi tập huấn luyện như trong LOOCV.
 
-Hệ số $h_i$ cho biết mức độ ảnh hưởng của quan sát thứ $i$ lên giá trị dự báo của chính nó. Nếu $h_i$ lớn, quan sát đó có ảnh hưởng mạnh hơn đến đường hồi quy. Khi đó, mẫu số $(1 - h_i)$ nhỏ hơn, làm cho phần dư hiệu chỉnh $\frac{y_i - \hat{y}_i}{1 - h_i}$ lớn hơn.
+- Hệ số $h_i$ cho biết mức độ ảnh hưởng của quan sát thứ $i$ lên giá trị dự báo của chính nó. Nếu $h_i$ lớn, quan sát đó có ảnh hưởng mạnh hơn đến đường hồi quy. Khi đó, mẫu số $(1 - h_i)$ nhỏ hơn, làm cho phần dư hiệu chỉnh $\frac{y_i - \hat{y}_i}{1 - h_i}$ lớn hơn.
 
-Nói cách khác, công thức này điều chỉnh phần dư thông thường bằng cách tính đến mức độ ảnh hưởng của từng quan sát. Nhờ đó, ta có thể ước lượng sai số LOOCV cho mô hình OLS chỉ từ một lần khớp mô hình trên toàn bộ dữ liệu.
+- Nói cách khác, công thức này điều chỉnh phần dư thông thường bằng cách tính đến mức độ ảnh hưởng của từng quan sát. Nhờ đó, ta có thể ước lượng sai số LOOCV cho mô hình OLS chỉ từ một lần khớp mô hình trên toàn bộ dữ liệu.
 
-## K-Fold Cross-Validation (Kiểm chứng chéo K-phần)
+## Kiểm chứng chéo K phần
 
-Đây là phương pháp trung hòa, chuẩn mực và được sử dụng rộng rãi nhất trong thực tế hiện nay.
+Đây là phương pháp trung hòa hai phương pháp nêu trên và được sử dụng rộng rãi nhất trong thực tế hiện nay.
 
 ### Cơ chế
 
@@ -146,7 +147,7 @@ Công thức tính lỗi tổng hợp:
 
 $CV_{(k)} = \frac{1}{k} \sum_{i=1}^{k} MSE_i$
 
-(Lưu ý: Nếu cấu hình hệ số $K = n$, mỗi fold sẽ thu hẹp lại chỉ chứa đúng 1 quan sát duy nhất. Quy trình xoay vòng $K$ lần lúc này đồng nhất tuyệt đối với cơ chế hoạt động của LOOCV).
+(Lưu ý: Nếu cấu hình hệ số $K = n$, mỗi fold sẽ thu hẹp lại chỉ chứa đúng 1 quan sát duy nhất. Quy trình xoay vòng $K$ lần lúc này đồng nhất tuyệt đối với cơ chế hoạt động của LOOCV) [@James2023].
 
 ```{r}
 set.seed(347)
@@ -166,14 +167,16 @@ cat("KFold_RMSE:", round(KFold_RMSE, 4), "\n")
 
 #### Ưu điểm
 
-- *Sự phụ thuộc vào cấu hình số lượng Fold (*$K$): Hiệu quả của thuật toán bị chi phối trực tiếp bởi việc lựa chọn giá trị $K$. Nếu chọn $K$ quá nhỏ (ví dụ $K=2$), mô hình sẽ rơi vào bẫy thiên vị cao (High Bias) do tập huấn luyện bị thu hẹp đáng kể so với dung lượng mẫu ban đầu.
+- Đánh giá khách quan, giảm thiểu Overfitting: Đảm bảo tất cả các quan sát trong tập dữ liệu đều được dùng để huấn luyện lẫn kiểm tra ít nhất một lần giúp ước lượng sai số kiểm thử một cách khách quan và chính xác hơn.
 
-- *Hạn chế đối với cấu trúc dữ liệu đặc thù:* $K$-Fold Cross-Validation thuần túy giả định các quan sát độc lập và phân phối cùng loại (i.i.d). Do đó, nó sẽ hoạt động kém hiệu quả hoặc làm sai lệch kết quả đối với dữ liệu chuỗi thời gian (Time-series data) do phá vỡ tính phụ thuộc thời gian, hoặc dữ liệu mất cân bằng nghiêm trọng (Imbalanced data) nếu các fold ngẫu nhiên không giữ được tỷ lệ phân phối của các lớp cấu thành.
+- Tận dụng tối đa dữ liệu: Hiệu quả khi kích thước mẫu (sample size) nhỏ. Việc chia thành ‭$K$‬ phần giúp mô hình luôn được huấn luyện trên một lượng lớn dữ liệu (‭$(K-1)/K$‬‭‬‭‬‭‬‭‬ tổng số mẫu) ở mỗi lượt.
+
+- Khắc phục được nhược điểm chi phí tính toán của LOOCV và bảo đảm sự khách quan, tối ưu dữ liệu hơn Validation Set.
 
 #### Nhược điểm
 
-- *Phụ thuộc vào cách chọn số fold (*$K$): Hiệu quả của K-Fold Cross-Validation phụ thuộc vào giá trị $K$ được chọn. Nếu $K$ quá nhỏ, chẳng hạn $K=2$, mỗi mô hình chỉ được huấn luyện trên một phần tương đối nhỏ của dữ liệu, nên sai số ước lượng có thể bị thiên lệch cao. Ngược lại, nếu $K$ quá lớn, thời gian tính toán sẽ tăng lên do mô hình phải được huấn luyện nhiều lần hơn.
+- Phụ thuộc vào cách chọn số fold ($K$): Hiệu quả của K-Fold Cross-Validation phụ thuộc vào giá trị $K$ được chọn. Nếu $K$ quá nhỏ, chẳng hạn $K=2$, mỗi mô hình chỉ được huấn luyện trên một phần tương đối nhỏ của dữ liệu, nên sai số ước lượng có thể bị thiên lệch cao. Ngược lại, nếu $K$ quá lớn, thời gian tính toán sẽ tăng lên do mô hình phải được huấn luyện nhiều lần hơn.
 
-- *Không phù hợp với một số dạng dữ liệu đặc thù:* K-Fold Cross-Validation thông thường giả định các quan sát độc lập và có cùng phân phối. Vì vậy, phương pháp này có thể không phù hợp với dữ liệu chuỗi thời gian, do việc chia ngẫu nhiên có thể làm mất trật tự thời gian của dữ liệu. Với dữ liệu mất cân bằng, các fold được chia ngẫu nhiên cũng có thể không giữ được tỷ lệ giữa các lớp, làm cho kết quả đánh giá mô hình kém ổn định.
+- Không phù hợp với một số dạng dữ liệu đặc thù: K-Fold Cross-Validation thông thường giả định các quan sát độc lập và có cùng phân phối. Vì vậy, phương pháp này có thể không phù hợp với dữ liệu chuỗi thời gian, do việc chia ngẫu nhiên có thể làm mất trật tự thời gian của dữ liệu. Với dữ liệu mất cân bằng, các fold được chia ngẫu nhiên cũng có thể không giữ được tỷ lệ giữa các lớp, làm cho kết quả đánh giá mô hình kém ổn định.
 
 
