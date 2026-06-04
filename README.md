@@ -22,5 +22,5 @@ Sau khi mọi người xong thì tải về knit html
 
 ## Câu hỏi thảo luận
 
-1. Khi xây dựng mô hình, tại sao người xây dựng lại phải chia dataset ra thành các tập train và test và tại sao tỉ lệ thường sử dụng là 80-20 hoặc 70-30
+1. Khi xây dựng mô hình, tại sao người xây dựng lại phải chia dataset ra thành các tập train và test và tại sao tỉ lệ thường sử dụng là 80-20 hoặc 70-30. Vậy trong trường hợp dữ liệu có đến khoảng 10 triệu records thì có nhất thiết phải chia tỉ lệ này hay không.
 2. Forward và Backward có vẻ như là đang làm ngược chiều nhau. Giả sử trên cùng 1 tập dataset, áp dụng 2 phương pháp Backward và Forward thì kết quả sẽ như thế nào? Giả sử bộ dữ liệu có 2 biến X1 và X2 tương quan với nhau mạnh, và cả 2 cùng tác động lên Y. Phân tích sai lầm của Forward và Backward có thể mắc phải với cặp biến này?
