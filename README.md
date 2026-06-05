@@ -1,6 +1,7 @@
 # Chủ đề 4: Lựa chọn mô hình và lựa chọn biến
 **Môn học:** Mô hình hóa thống kê  
 **Bộ dữ liệu:** Diabetes (package lars)
+**Link reposity:** https://github.com/hatran347/Final_TieuChuanChonBienVaLuaChonMoHinh
 
 ## Giới thiệu
 
