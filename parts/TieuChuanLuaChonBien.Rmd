@@ -74,7 +74,7 @@ legend("topright",
 
 Bài toán lựa chọn biến thực chất là tìm sự cân bằng giữa độ khớp (*goodness-of-fit*) và độ phức tạp của mô hình. Một mô hình có nhiều biến thường khớp dữ liệu tốt hơn, nhưng cũng dễ trở nên phức tạp và có nguy cơ quá khớp. Ngược lại, mô hình quá đơn giản có thể bỏ sót những thông tin quan trọng.
 
-Các tiêu chuẩn như Adjusted \$R\^2\$, Mallows' \$C_p\$, AIC và BIC đều được xây dựng theo cùng một ý tưởng: kết hợp giữa mức độ sai khác của mô hình với dữ liệu (*lack-of-fit*) và một thành phần phạt (*penalty*) đối với số lượng biến được sử dụng,
+Các tiêu chuẩn như Adjusted $R\^2$, Mallows' $C_p$, AIC và BIC đều được xây dựng theo cùng một ý tưởng: kết hợp giữa mức độ sai khác của mô hình với dữ liệu (*lack-of-fit*) và một thành phần phạt (*penalty*) đối với số lượng biến được sử dụng,
 
 $$\text{Tiêu chuẩn}
 =
@@ -82,7 +82,7 @@ $$\text{Tiêu chuẩn}
 +
 \text{Penalty} \; (\uparrow)$$
 
-Điểm khác biệt giữa các tiêu chuẩn nằm ở cách xây dựng thành phần penalty. Chẳng hạn, Mallows' \$C_p\$ xuất phát từ việc ước lượng sai số dự báo ngoài mẫu, AIC dựa trên lý thuyết hợp lý cực đại và khoảng cách Kullback–Leibler, còn BIC được xây dựng từ quan điểm Bayes.
+Điểm khác biệt giữa các tiêu chuẩn nằm ở cách xây dựng thành phần penalty. Chẳng hạn, Mallows' $C_p$ xuất phát từ việc ước lượng sai số dự báo ngoài mẫu, AIC dựa trên lý thuyết hợp lý cực đại và khoảng cách Kullback–Leibler, còn BIC được xây dựng từ quan điểm Bayes.
 
 ## Hệ số xác định $R^2$
 
@@ -131,7 +131,7 @@ Là thước đo mô tả phổ biến nhất trong các báo cáo thống kê: 
 
 - Ưu điểm: đơn giản, dễ hiểu, có ý nghĩa tỷ lệ rõ ràng, không cần ước lượng $\sigma^2$ riêng.
 
-- Nhược điểm: **đơn điệu tăng** theo $p$ nên không thể dùng so sánh các mô hình có số biến khác nhau; bị "lừa" hoàn toàn bởi biến nhiễu [@Sheather2009, §7.1.1].
+- Nhược điểm: **đơn điệu tăng** theo $p$ nên không thể dùng so sánh các mô hình có số biến khác nhau; bị "lừa" hoàn toàn bởi biến nhiễu [@Sheather2009].
 
 ### Khi nào dùng
 
@@ -409,7 +409,7 @@ legend("topright",
 
 AIC chính là **xấp xỉ không chệch** của $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$, cộng với một hằng số không phụ thuộc mô hình. Mô hình có AIC nhỏ nhất là mô hình *gần nhất* với cơ chế sinh dữ liệu theo nghĩa K–L. Trong hồi quy Gauss, AIC và $C_p$ **tỷ lệ tuyến tính** — chọn cùng một mô hình.
 
-Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/K < 40$, dùng $\mathrm{AIC}_C = \mathrm{AIC} + \frac{2K(K+1)}{n-K-1}$ (Hurvich & Tsai, 1989) [@Sheather2009, §7.1.3].
+Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/K < 40$, dùng $\mathrm{AIC}_C = \mathrm{AIC} + \frac{2K(K+1)}{n-K-1}$ [@Hurvich1989] [@Sheather2009]
 
 ## BIC — Bayesian Information Criterion
 
@@ -620,11 +620,11 @@ vars_bic <- names(coef(best_subset, best_bic_size))[-1]
 
 best_model_summary <- data.frame(
   Criterion = c(
-    "R2 lon nhat",
-    "Adjusted R2 lon nhat",
-    "Cp nho nhat",
-    "AIC nho nhat",
-    "BIC nho nhat"
+    "R2 lớn nhất",
+    "R2 hiệu chỉnh lớn nhất",
+    "Cp nhỏ nhất",
+    "AIC nhỏ nhất",
+    "BIC nhỏ nhất"
   ),
   Subset_size = c(
     best_r2_size,

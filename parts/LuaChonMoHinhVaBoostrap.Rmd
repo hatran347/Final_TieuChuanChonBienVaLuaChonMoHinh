@@ -1,4 +1,4 @@
-# Lựa chọn mô hình và Boostrap
+# Lựa chọn mô hình và Bootstrap
 
 ## Lựa chọn mô hình
 
@@ -73,7 +73,10 @@ compare_models <- data.frame(
   )
 )
 
-compare_models
+knitr::kable(
+  compare_models,
+  digits = 4,
+  caption = "So sánh các mô hình được lựa chọn bởi các phương pháp khác nhau")
 ```
 
 ```{r}
@@ -108,7 +111,7 @@ Kết quả kiểm định cho p-value = 0.9904 \> 0.05, do đó không bác b�
 
 ## Boostrap
 
-Để đánh giá độ ổn định của mô hình cuối cùng, nhóm sử dụng phương pháp Bootstrap với 1000 lần lấy mẫu có hoàn lại từ tập huấn luyện. Sai số chuẩn bootstrap được sử dụng để đánh giá mức độ biến động của các hệ số hồi quy dưới những mẫu dữ liệu khác nhau (14)
+Để đánh giá độ ổn định của mô hình cuối cùng, sử dụng phương pháp Bootstrap với 1000 lần lấy mẫu ngẫu nhiên có hoàn lại từ tập train. Boostrap Standard Error được sử dụng để đánh giá mức độ biến động của các hệ số hồi quy dưới những mẫu dữ liệu khác nhau (14)
 
 ```{r, echo = FALSE}
 library(boot)
