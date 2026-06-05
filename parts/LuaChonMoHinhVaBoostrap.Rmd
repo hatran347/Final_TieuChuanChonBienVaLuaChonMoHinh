@@ -111,7 +111,7 @@ Kết quả kiểm định cho p-value = 0.9904 \> 0.05, do đó không bác b�
 
 ## Boostrap
 
-Để đánh giá độ ổn định của mô hình cuối cùng, sử dụng phương pháp Bootstrap với 1000 lần lấy mẫu ngẫu nhiên có hoàn lại từ tập train. Boostrap Standard Error được sử dụng để đánh giá mức độ biến động của các hệ số hồi quy dưới những mẫu dữ liệu khác nhau (14)
+Để đánh giá độ ổn định của mô hình cuối cùng, sử dụng phương pháp Bootstrap với 1000 lần lấy mẫu ngẫu nhiên có hoàn lại từ tập train. Boostrap Standard Error được sử dụng để đánh giá mức độ biến động của các hệ số hồi quy dưới những mẫu dữ liệu khác nhau [@James2023].
 
 ```{r, echo = FALSE}
 library(boot)

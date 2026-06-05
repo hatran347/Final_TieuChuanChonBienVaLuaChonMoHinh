@@ -8,7 +8,7 @@ Khi huấn luyện mô hình, cần phân biệt giữa **Training Error** và *
 
 ### Cơ chế
 
-- Chia ngẫu nhiên dữ liệu gốc thành hai phần độc lập: **Tập huấn luyện** (Training Set) chiếm phần lớn dùng để xây dựng mô hình và **Tập kiểm chứng** (Validation set / Hold-out set) là phần còn lại không cho mô hình biết trước, dùng để tính lỗi sau khi mô hình đã học xong [@James2023].
+- Chia ngẫu nhiên dữ liệu gốc thành hai phần độc lập: **Tập huấn luyện** (Training Set) chiếm phần lớn dùng để xây dựng mô hình và **Tập kiểm chứng** (Validation set / test set) là phần còn lại không cho mô hình biết trước, dùng để tính lỗi sau khi mô hình đã học xong [@James2023].
 
 - Mô hình học trên tập Train và đo lường sai số (MSE/RMSE) trên tập Validation.
 
