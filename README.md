@@ -17,7 +17,7 @@ install.packages(c( "tidyverse", "leaps", "boot", "lars", "knitr", "kableExtra",
 | Thành viên         | Công việc                                                                      | Mức độ hoàn thiện |
 | ------------------ | ------------------------------------------------------------------------------ | ----------------- |
 | Vũ Hà Thư          | Tiêu chuẩn lựa chọn biến                                                       | 100%              |
-| Nguyễn Đình Mai Vi | Lựa chọn mô hình và các kiểm định                                              | 100%              |
+| Nguyễn Đình Mai Vi | Lựa chọn mô hình                                              | 100%              |
 | Trần Việt Hà       | Tổng hợp nội dung, code minh họa                                               | 100%              |
 
 ## Câu hỏi thảo luận
