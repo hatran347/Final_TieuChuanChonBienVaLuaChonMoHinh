@@ -1,20 +1,6 @@
 \newpage
-\setlength{\parindent}{-0.4in}
-\setlength{\leftskip}{0.4in}
 
 # Tài liệu tham khảo
 
-1.  Akaike, H. (1973). Information theory and an extension of the maximum likelihood principle. *Proc. 2nd Int. Symp. Information Theory*, 267–281. (Nguồn gốc lý thuyết về tiêu chuẩn thông tin AIC trong việc tối ưu hóa hàm tựa lồi và lựa chọn mô hình).
-2.  Bingham, N. H., & Fry, J. M. (2010). *Regression: Linear Models in Statistics*. Springer Science & Business Media. (Cơ sở lý thuyết hệ thống về các mô hình tuyến tính trong thống kê dành cho bậc đại học).
-3.  Burnham, K. P., & Anderson, D. R. (2004). Multimodel inference: Understanding AIC and BIC in model selection. *Sociological Methods & Research*, 33(2), 261–304. (Phân tích chuyên sâu và so sánh bản chất triết học, ứng dụng của AIC và BIC trong suy luận đa mô hình).
-4.  Dalpiaz, D. (2021). *Applied Statistics with R*. Illinois Open Publishing Network. (Hướng dẫn thực hành thống kê ứng dụng và xây dựng mô hình hồi quy trên ngôn ngữ R tại Chương 16).
-5.  Faraway, J. J. (2015). *Linear Models with R* (2nd ed.). Chapman and Hall/CRC. (Trích dẫn về hệ quả của Stepwise selection và các tiêu chuẩn đánh giá mô hình hồi quy tại Chương 10).
-6.  Hurvich, C. M., & Tsai, C.-L. (1989). Regression and time series model selection in small samples. *Biometrika*, 76(2), 297–307. (Nghiên cứu về tiêu chuẩn lựa chọn mô hình hồi quy và chuỗi thời gian đối với các tập dữ mẫu nhỏ).
-7.  James, G., Witten, D., Hastie, T., & Tibshirani, R. (2023). *An Introduction to Statistical Learning: with Applications in R* (2nd ed.). Springer New York. (Tham chiếu chính về lý thuyết Cross-validation tại Chương 5 và Subset Selection tại Chương 6, trang 233–235).
-8.  Mallows, C. L. (1973). Some comments on $C_p$. *Technometrics*, 15(4), 661–675. (Ghi chú và phân tích nền tảng về tiêu chuẩn Mallows' $C_p$ phục vụ chọn lọc biến trong mô hình hồi quy).
-9.  Rencher, A. C., & Schaalje, G. B. (2008). *Linear Models in Statistics* (2nd ed.). John Wiley & Sons. (Cơ sở toán học ma trận của phương pháp OLS, kiểm định giả thuyết tuyến tính tổng quát và phân bổ bậc tự do hồi quy tại Chương 7 & 8).
-10. Schwarz, G. (1978). Estimating the dimension of a model. *Annals of Statistics*, 6(2), 461–464. (Cơ sở toán học và định nghĩa gốc của tiêu chuẩn thông tin Bayes - BIC dựa trên xấp xỉ tích phân Laplace).
-11. Sheather, S. J. (2009). *A Modern Approach to Regression with R*. Springer Science & Business Media. (Dẫn chứng về tiêu chuẩn so sánh thông tin AIC, BIC, phân tích cấu trúc đa cộng tuyến và lựa chọn biến tại Chương 7, trang 227–233).
-12. Weisberg, S. (2014). *Applied Linear Regression* (4th ed.). John Wiley & Sons. (Tham chiếu về các phương pháp đánh giá, kiểm định và so sánh mô hình tuyến tính ứng dụng tại Chương 10, trang 238–239).
-13. Yang, Y. (2005). Can the strengths of AIC and BIC be shared? A conflict between model identification and regression estimation. *Biometrika*, 92(4), 937–950. (Phân tích xung đột toán học giữa mục tiêu nhận dạng mô hình chính xác của BIC và mục tiêu tối ưu hóa dự báo của AIC).
-14. Chương 5 (*Resampling Methods*), Mục 5.3.4 (*The Bootstrap*) của cuốn *An Introduction to Statistical Learning with Applications in R* (James, Witten, Hastie và Tibshirani, 2021). .
+::: {#refs}
+:::

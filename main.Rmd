@@ -24,6 +24,12 @@ fontsize: 11pt
 geometry: margin=2.5cm
 mainfont: "Times New Roman"
 
+bibliography: parts/Tailieuthamkhao.bib
+csl: parts/annotated-authordate.csl
+link-citations: true
+nocite: |
+  @*
+
 header-includes:
   - \usepackage{float}
   - \usepackage{amsmath}
