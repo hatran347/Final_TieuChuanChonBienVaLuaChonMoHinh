@@ -5,7 +5,7 @@
 
 ## Giới thiệu
 
-Báo cáo trình bày các phương pháp tiêu chuẩn lựa chọn biến và phương pháp lựa chọn mô hình hồi quy tuyến tính, thực nghiệm trên bộ dữ liệu Diabetes. Các mô hình được đánh giá bằng các tiêu chuẩn như R², Adjusted R², Mallows' Cp, AIC, BIC, đồng thời được kiểm định và đánh giá độ ổn định thông qua các kỹ thuật Cross-Validation.
+Báo cáo trình bày các tiêu chuẩn lựa chọn biến và phương pháp lựa chọn mô hình hồi quy tuyến tính, thực nghiệm trên bộ dữ liệu Diabetes. Các mô hình được đánh giá bằng các tiêu chuẩn như R², Adjusted R², Mallows' Cp, AIC, BIC, lựa chọn bởi các phương pháp Forward Selection, Backward Elimination, Stepwise Selection đồng thời được kiểm định và đánh giá độ ổn định thông qua các kỹ thuật Cross-Validation.
 
 Để chạy toàn bộ các đoạn code trong báo cáo này, cần chuẩn bị các thư viện sau:
 
