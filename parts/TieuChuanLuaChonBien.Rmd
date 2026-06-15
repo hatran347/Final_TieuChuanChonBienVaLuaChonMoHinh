@@ -6,9 +6,21 @@ Nếu chỉ dựa vào tổng bình phương sai số
 
 $$\mathrm{SSE}=\sum_{i=1}^{n}(y_i-\hat y_i)^2,$$
 
-thì việc bổ sung thêm biến giải thích sẽ không làm SSE tăng. Tương tự, hệ số xác định $R^2$ cũng không giảm khi thêm biến vào mô hình. Do đó, khi sử dụng riêng SSE hoặc $R^2$ để đánh giá, các mô hình có nhiều biến thường sẽ được ưu tiên hơn.
+trong đó $n$ là cỡ mẫu (số quan sát), $y_i$ là giá trị thực tế và $\hat y_i$ là giá trị dự báo của quan sát thứ $i$, thì việc bổ sung thêm biến giải thích sẽ không làm SSE tăng. Tương tự, hệ số xác định $R^2$ cũng không giảm khi thêm biến vào mô hình. Do đó, khi sử dụng riêng SSE hoặc $R^2$ để đánh giá, các mô hình có nhiều biến thường sẽ được ưu tiên hơn.
 
 Tuy nhiên, mô hình có quá nhiều biến có thể dẫn đến hiện tượng *overfitting*, tức là mô hình khớp rất tốt với dữ liệu huấn luyện (train) nhưng lại dự báo kém trên dữ liệu mới (test hoặc out-of-time). Vì vậy, cần có các tiêu chuẩn lựa chọn biến nhằm cân bằng giữa độ khớp và độ phức tạp của mô hình.
+
+### Ký hiệu và quy ước
+
+Để thống nhất ký hiệu trong toàn bộ phần này:
+
+- $n$: **cỡ mẫu** — tổng số quan sát trong tập dữ liệu.
+- $p$: **số biến giải thích** (predictors) có trong mô hình con đang xét.
+- $k = p + 1$: **số tham số cần ước lượng** của mô hình hồi quy tuyến tính $Y$ theo $X_1, \ldots, X_p$, gồm $p$ hệ số góc $\beta_1,\ldots,\beta_p$ và hệ số chặn $\beta_0$.
+- $y_i,\ \hat y_i$: giá trị thực tế và giá trị dự báo của quan sát thứ $i$.
+- $\hat\sigma^2$: ước lượng không chệch của phương sai sai số $\sigma^2$, lấy từ mô hình đầy đủ.
+
+**Lưu ý quan trọng về ký hiệu:** Hệ số phạt trong $C_p$, AIC, BIC nhân với **số tham số $k = p+1$**, không phải số biến $p$. Nhiều tài liệu (Sheather 2009, Weisberg 2014) dùng ký hiệu `p` nhưng định nghĩa là "số tham số kể cả intercept" — tức đúng bằng $k$ theo quy ước này. ISL (James et al. 2023) dùng ký hiệu `d` cho cùng đại lượng đó.
 
 ```{r, echo=FALSE}
 
@@ -236,10 +248,23 @@ Không khuyến nghị làm tiêu chuẩn duy nhất khi mục tiêu là *dự b
 
 Mallows' $C_p$ giải quyết nhược điểm của $R^2$ bằng cách đi tìm một ước lượng không chệch cho sai số ngoài tập mẫu thực tế.
 
-$$\boxed{\;C_p \;=\; \frac{1}{n}\bigl(\mathrm{SSE} + 2 p\, \hat\sigma^2\bigr)\;} \tag{4}$$ hoặc dạng tương đương: $$C_p^{\ast} \;=\; \frac{\mathrm{SSE}}{\hat\sigma^2} + 2p - n. \tag{5}$$
+$$\boxed{\;C_p \;=\; \frac{1}{n}\bigl(\mathrm{SSE} + 2k\,\hat\sigma^2\bigr)\;} \tag{4}$$
 
-- $\hat\sigma^2$ là ước lượng không chệch của $\sigma^2$ lấy từ mô hình **đầy đủ** (chứa tất cả $m$ biến).
-- $p$ là số biến trong mô hình con đang xét.
+hoặc dạng tương đương (dùng để vẽ đồ thị chẩn đoán):
+
+$$C_p^{\ast} \;=\; \frac{\mathrm{SSE}}{\hat\sigma^2} + 2k - n. \tag{5}$$
+
+- $n$: cỡ mẫu — số quan sát trong tập dữ liệu.
+- $k = p+1$: số tham số cần ước lượng trong mô hình con ($p$ hệ số góc + 1 hệ số chặn $\beta_0$).
+- $\hat\sigma^2$: ước lượng không chệch của $\sigma^2$ lấy từ mô hình **đầy đủ** (chứa tất cả các biến ứng viên).
+
+**Hai công thức (4) và (5) tương đương** trong việc xếp hạng mô hình (rank-preserving), nhưng được dùng cho hai mục đích khác nhau:
+
+- **Công thức (4)** ($C_p$, chia $n$): Là ước lượng trực tiếp của **test MSE** (bình phương sai số trung bình ngoài mẫu), có đơn vị giống với $Y^2/n$. Dùng khi muốn chọn mô hình bằng cách **tìm giá trị nhỏ nhất** — mô hình nào có $C_p$ nhỏ nhất thì được chọn. Đây là dạng phổ biến trong ISL (James et al. 2023).
+- **Công thức (5)** ($C_p^*$, không chia $n$): Là dạng gốc của Mallows (1973), thuận tiện cho **vẽ đồ thị chẩn đoán**: khi mô hình không bị bias (đúng), $\mathbb{E}[C_p^*] \approx k$, nên vẽ đồ thị $C_p^*$ theo $k$ (hay $p$) và tìm điểm nào **nằm gần đường tham chiếu $y = k$** nhất. Dạng này thường xuất hiện trong Sheather (2009) và Weisberg (2014).
+
+Mối quan hệ giữa hai công thức: $C_p^* = \dfrac{n}{\hat\sigma^2} C_p - n$, hay $C_p = \dfrac{\hat\sigma^2(C_p^* + n)}{n}$.
+Khi mô hình không bias, $C_p^* \approx k$ tương đương với $C_p \approx \dfrac{(k+n)\hat\sigma^2}{n} \approx \hat\sigma^2$ (với $n \gg k$).
 
 #### Chứng minh toán học: Dẫn xuất công thức Mallows' $C_p$ từ lý thuyết thống kê (góc nhìn Bias-Variance)
 
@@ -254,37 +279,37 @@ $$\boxed{\;C_p \;=\; \frac{1}{n}\bigl(\mathrm{SSE} + 2 p\, \hat\sigma^2\bigr)\;}
   - Vì các quan sát $Y_i$ độc lập với nhau, nên $Cov(Y_j, Y_i) = 0$ với mọi $j \neq i$, và $Cov(Y_i, Y_i) = Var(Y_i) = \sigma^2$. Do đó, phương trình rút gọn thần kỳ về: $$Cov(\hat{Y}_i, Y_i) = H_{ii} \sigma^2$$
 - **Bước 3: Sử dụng tính chất Vết (Trace) của Ma trận Chiếu**
   - Tổng các hiệp phương sai trên toàn bộ $n$ quan sát sẽ là: $$\sum_{i=1}^n Cov(\hat{Y}_i, Y_i) = \sum_{i=1}^n H_{ii} \sigma^2 = \text{Tr}(H) \sigma^2$$
-  - Theo đại số tuyến tính, ma trận chiếu $H$ lên không gian $p$ chiều của các biến độc lập có vết đúng bằng số chiều của không gian đó: $\text{Tr}(H) = p$ (nếu mô hình không có intercept) hoặc $p+1$ (nếu có tính intercept). Ở đây ta ký hiệu là $p$ tham số.
-  - Do đó, ta có hệ thức: $\sum_{i=1}^n Cov(\hat{Y}_i, Y_i) = p \sigma^2$.
+  - Theo đại số tuyến tính, ma trận chiếu $H$ lên không gian của mô hình hồi quy $Y$ theo $X_1,\ldots,X_p$ (có intercept) có vết đúng bằng số chiều của không gian đó, tức bằng **số tham số ước lượng** $k = p+1$: $\text{Tr}(H) = k$.
+  - Do đó: $\sum_{i=1}^n Cov(\hat{Y}_i, Y_i) = k\,\sigma^2$.
 - **Bước 4: Thiết lập chỉ số Mallows'** $C_p$
-  - Thế kết quả hiệp phương sai vào phương trình ở Bước 1: $Err_{test} \approx \frac{SSE}{n} + \frac{2p\sigma^2}{n}$.
-  - Nhân cả hai vế với $n$ và thay thế hằng số chưa biết $\sigma^2$ bằng ước lượng không chệch từ mô hình lớn nhất $\hat{\sigma}^2$, ta có công thức Mallows' $C_p$: $$C_p = \frac{1}{n} (SSE + 2p\hat{\sigma}^2)$$
+  - Thế kết quả hiệp phương sai vào phương trình ở Bước 1: $Err_{test} \approx \frac{SSE}{n} + \frac{2k\sigma^2}{n}$.
+  - Nhân cả hai vế với $n$ và thay thế hằng số chưa biết $\sigma^2$ bằng ước lượng không chệch từ mô hình đầy đủ $\hat{\sigma}^2$, ta có công thức Mallows' $C_p$: $$C_p = \frac{1}{n} (SSE + 2k\hat{\sigma}^2)$$
 
 ### Bản chất thống kê: ước lượng không chệch của test MSE
 
 $C_p$ là ước lượng không chệch của sai số dự báo thực tế ngoài tập mẫu (Test MSE) theo @Mallows1973. Do đó $C_p$ càng thấp càng tốt (do sai số càng thấp tức mô hình giải thích càng tốt).
 
-- **Lack-of-fit:** Đại lượng $\mathrm{SSE}$ (độ lệch/sai số trên tập luyện huấn luyện).
-- **Penalty:** Đại lượng $2p\hat{\sigma}^2$. Phạt tuyến tính theo số biến $p$ và độ nhiễu $\hat{\sigma}^2$.
+- **Lack-of-fit:** Đại lượng $\mathrm{SSE}$ (độ lệch/sai số trên tập huấn luyện).
+- **Penalty:** Đại lượng $2k\hat{\sigma}^2$. Phạt tuyến tính theo **số tham số** $k = p+1$ và độ nhiễu $\hat{\sigma}^2$.
 
-**Bản chất**: Khi tăng số biến p lên, phần sai số SSE sẽ giảm (do thêm biến giải thích). Tuy nhiên, khi cộng thêm đại lượng $2p\hat{\sigma}^2$ sẽ tăng khi số biến p tăng. Vậy nên chỉ khi biến mới thêm vào có ý nghĩa giải thích tốt, thì SSE sẽ giảm mạnh, bù trừ đi phần tăng của $2p\hat{\sigma}^2$, làm cho tổng thể $C_p$ giảm xuống. Nhưng ngược lại nếu thêm 1 biến giải thích không tốt, SSE giảm không đáng kể trong khi đó $2p\hat{\sigma}^2$ vẫn tăng dẫn đến $C_p$ cao.
+**Bản chất**: Khi tăng số biến $p$ lên, phần sai số SSE sẽ giảm (do thêm biến giải thích). Tuy nhiên, đại lượng $2k\hat{\sigma}^2 = 2(p+1)\hat{\sigma}^2$ tăng khi $p$ tăng. Chỉ khi biến mới có ý nghĩa giải thích tốt, SSE sẽ giảm mạnh, bù trừ phần tăng của $2k\hat{\sigma}^2$, làm $C_p$ giảm. Ngược lại, nếu thêm biến không có ý nghĩa, SSE giảm không đáng kể trong khi $2k\hat{\sigma}^2$ vẫn tăng, dẫn đến $C_p$ cao hơn.
 
 ### Ứng dụng
 
 - Ưu điểm: ý nghĩa thống kê rõ ràng (ước lượng test MSE), có thước đo *tuyệt đối* để chẩn đoán bias (vị trí so với $y = p$).
 
-- Nhược điểm: cần $\hat\sigma^2$ từ mô hình đầy đủ — nếu mô hình đầy đủ *vẫn* thiếu biến quan trọng thì $\hat\sigma^2$ chệch lên và $C_p$ không còn không chệch; chỉ hợp lệ cho hồi quy tuyến tính Gauss với phương sai đồng nhất.
+- Nhược điểm: cần $\hat\sigma^2$ từ mô hình đầy đủ — nếu mô hình đầy đủ *vẫn* thiếu biến quan trọng thì $\hat\sigma^2$ chệch lên và $C_p$ không còn không chệch; chỉ hợp lệ cho **hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss)** với phương sai đồng nhất.
 
 ### Nguyên lý lựa chọn biến tối ưu dựa trên Mallows' $C_p$
 
 **Nguyên lý chọn subset size**: Theo @Akaike1973, đã chứng minh dựa trên Khoảng cách **Kullback-Leibler** rằng khi ta thêm các biến không cần thiết vào mô hình, khoảng cách giữa phân phối mô hình dự báo và phân phối thực tế sẽ tăng lên, tạo ra hình dạng chữ U. Đáy của chữ U chính là điểm cực tiểu của $C_p$, nên sẽ chọn subset size tại điểm này.
 
-Ngoài ra theo công thức $C_p^{\ast}$, tiêu chuẩn chọn là tìm số biến p nhỏ nhất sao cho giá trị của $C_p^{\ast}$ giảm và chạm vào đường tham chiếu $y=p$. (Tức khi $C_p^{\ast} \approx p$ - mô hình không chệch (unbiased))
+Ngoài ra theo công thức $C_p^{\ast}$, tiêu chuẩn chọn là tìm số tham số $k$ (hay số biến $p$) nhỏ nhất sao cho giá trị của $C_p^{\ast}$ giảm và chạm vào đường tham chiếu $y = k$. (Tức khi $C_p^{\ast} \approx k$ — mô hình không chệch (unbiased))
 
 Đặt $\mathrm{MSE}_{\text{test}} = \mathbb{E}[(Y^{\ast}-\hat Y^{\ast})^2]$.
 
-Có thể chứng minh training SSE *chệch xuống* so với $n\cdot\mathrm{MSE}_{\text{test}}$ một lượng xấp xỉ $2p\sigma^2$ (gọi là *optimism*). @Mallows1973 đề xuất *cộng trả lại* đúng độ chệch đó: $$\mathbb{E}\!\left[\frac{1}{n}(\mathrm{SSE} + 2p\hat\sigma^2)\right]
-\;\approx\; \mathrm{MSE}_{\text{test}}.$$ Do đó $C_p$ là **ước lượng không chệch của test MSE** khi $\hat\sigma^2$ không chệch. Với mô hình "đúng" (không bias), $\mathbb{E}(C_p^{\ast}) \approx p$ — quy tắc thực hành: chọn mô hình có $C_p^{\ast}$ gần đường $y = p$ nhất.
+Có thể chứng minh training SSE *chệch xuống* so với $n\cdot\mathrm{MSE}_{\text{test}}$ một lượng xấp xỉ $2k\sigma^2$ (gọi là *optimism*). @Mallows1973 đề xuất *cộng trả lại* đúng độ chệch đó: $$\mathbb{E}\!\left[\frac{1}{n}(\mathrm{SSE} + 2k\hat\sigma^2)\right]
+\;\approx\; \mathrm{MSE}_{\text{test}}.$$ Do đó $C_p$ là **ước lượng không chệch của test MSE** khi $\hat\sigma^2$ không chệch. Với mô hình "đúng" (không bias), $\mathbb{E}(C_p^{\ast}) \approx k$ — quy tắc thực hành: chọn mô hình có $C_p^{\ast}$ gần đường $y = k$ nhất.
 
 ```{r, echo=FALSE}
 par(family = "Times")
@@ -318,9 +343,9 @@ legend("topright", legend = c("Underfit (Bias cao)", "Không bias (Tốt)"),
 text(2, cp_vals[2] + 2, "y=d", pos = 3, col = "grey40")
 ```
 
-**Sử dụng khi**: (i) bài toán là **hồi quy tuyến tính cổ điển**;
+**Sử dụng khi**: (i) bài toán là **hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss cổ điển)**;
 
-(ii) $n$ đủ lớn để $\hat\sigma^2$ ổn định; (iii) muốn có thước đo trực quan với "đường tham chiếu" $y = p$ để nhận diện bias. Với GLM, hỗn hợp, ... không dùng $C_p$ mà chuyển sang AIC.
+(ii) $n$ đủ lớn để $\hat\sigma^2$ ổn định; (iii) muốn có thước đo trực quan với "đường tham chiếu" $y = k$ để nhận diện bias. Với GLM, hỗn hợp, ... không dùng $C_p$ mà chuyển sang AIC.
 
 ## AIC — Akaike Information Criterion
 
@@ -328,25 +353,25 @@ AIC không đi từ phương sai như $C_p$, mà đi từ **Khoảng cách Kullb
 
 ### Công thức và dẫn xuất
 
-$$\boxed{\;\mathrm{AIC} = -2 \ln L + 2p\;}$$
+$$\boxed{\;\mathrm{AIC} = -2 \ln L + 2k\;}$$
 
-- $L$: Hàm hợp lý (Likelihood Function)
-- $p$: Số biến trong mô hình con đang xét.
+- $L$: Hàm hợp lý (Likelihood Function).
+- $k = p+1$: Số tham số cần ước lượng trong mô hình hồi quy $Y$ theo $X_1,\ldots,X_p$ (gồm $p$ hệ số góc và 1 hệ số chặn $\beta_0$).
 
-Trong hồi quy Gauss, quy đổi tỷ lệ thuận thành tương tự như $C_p$: $$\mathrm{AIC} \approx \frac{1}{n\hat{\sigma}^2} (\mathrm{SSE} + 2p\hat{\sigma}^2)$$
+Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), quy đổi tỷ lệ thuận thành dạng tương tự $C_p$: $$\mathrm{AIC} \approx \frac{1}{n\hat{\sigma}^2} (\mathrm{SSE} + 2k\hat{\sigma}^2)$$
 
 **Bước 1: Hàm Hợp lý Cực đại (Log-Likelihood)** Giả sử sai số có phân phối chuẩn, hàm Log-Likelihood của mô hình tuyến tính là: $$\ln L(\hat{\beta}, \hat{\sigma}^2) = -\frac{n}{2} \ln(2\pi) - \frac{n}{2} \ln(\hat{\sigma}^2) - \frac{1}{2\hat{\sigma}^2} \sum_{i=1}^n (y_i - X_i\hat{\beta})^2$$ $$\ln L = C - \frac{n}{2} \ln(\hat{\sigma}^2) - \frac{SSE}{2\hat{\sigma}^2}$$
 
-**Bước 2: Nguyên lý Akaike** Hirotugu Akaike chứng minh rằng giá trị lớn nhất của Log-likelihood trên tập Training là một ước lượng chệch của "lượng thông tin thực sự". Độ chệch này xấp xỉ bằng số lượng tham số $p$. Công thức AIC tiêu chuẩn: $$AIC = -2 \ln L + 2p$$
+**Bước 2: Nguyên lý Akaike** Hirotugu Akaike chứng minh rằng giá trị lớn nhất của Log-likelihood trên tập Training là một ước lượng chệch của "lượng thông tin thực sự". Độ chệch này xấp xỉ bằng **số tham số cần ước lượng** $k = p+1$. Công thức AIC tiêu chuẩn: $$AIC = -2 \ln L + 2k$$
 
-**Bước 3: Quy đổi AIC về dạng SSE trong Hồi quy tuyến tính** Bỏ qua các hằng số không ảnh hưởng đến việc so sánh, nếu giả định $\hat{\sigma}^2$ là hằng số cố định (ước lượng từ mô hình đầy đủ), thế $\ln L$ vào, ta được dạng xấp xỉ tỷ lệ: $$AIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + 2p\hat{\sigma}^2)$$
+**Bước 3: Quy đổi AIC về dạng SSE trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$** Bỏ qua các hằng số không ảnh hưởng đến việc so sánh, nếu giả định $\hat{\sigma}^2$ là hằng số cố định (ước lượng từ mô hình đầy đủ), thế $\ln L$ vào, ta được dạng xấp xỉ tỷ lệ: $$AIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + 2k\hat{\sigma}^2)$$
 
 ### Bản chất thống kê: xấp xỉ Kullback–Leibler
 
-Xuất phát từ lý thuyết thông tin, AIC xấp xỉ khoảng cách Kullback-Leibler để tìm mô hình gần nhất với cơ chế sinh dữ liệu. Trong hồi quy tuyến tính, AIC tương đương hoàn toàn với Mallows' $C_p$.
+Xuất phát từ lý thuyết thông tin, AIC xấp xỉ khoảng cách Kullback-Leibler để tìm mô hình gần nhất với cơ chế sinh dữ liệu. Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), AIC tương đương hoàn toàn với Mallows' $C_p$.
 
 - **Lack-of-fit:** Đại lượng $-2 \ln L$ (hoặc tương đương $\mathrm{SSE}$).
-- **Penalty:** Đại lượng $2p$ (hoặc tương đương $2p\hat{\sigma}^2$). Mức phạt cố định bằng 2 cho mỗi tham số độc lập.
+- **Penalty:** Đại lượng $2k$ (hoặc tương đương $2k\hat{\sigma}^2$). Mức phạt cố định bằng 2 cho mỗi tham số cần ước lượng $k = p+1$.
 
 ### Ứng dụng
 
@@ -408,9 +433,9 @@ legend("topright",
        col = c("steelblue", "grey50"), bty = "n")
 ```
 
-AIC chính là **xấp xỉ không chệch** của $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$, cộng với một hằng số không phụ thuộc mô hình. Mô hình có AIC nhỏ nhất là mô hình *gần nhất* với cơ chế sinh dữ liệu theo nghĩa K–L. Trong hồi quy Gauss, AIC và $C_p$ **tỷ lệ tuyến tính** — chọn cùng một mô hình.
+AIC chính là **xấp xỉ không chệch** của $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$, cộng với một hằng số không phụ thuộc mô hình. Mô hình có AIC nhỏ nhất là mô hình *gần nhất* với cơ chế sinh dữ liệu theo nghĩa K–L. Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), AIC và $C_p$ **tỷ lệ tuyến tính** — chọn cùng một mô hình.
 
-Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/K < 40$, dùng $\mathrm{AIC}_C = \mathrm{AIC} + \frac{2K(K+1)}{n-K-1}$ [@Hurvich1989] [@Sheather2009]
+Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/k < 40$, dùng $\mathrm{AIC}_C = \mathrm{AIC} + \frac{2k(k+1)}{n-k-1}$ [@Hurvich1989] [@Sheather2009]
 
 ## BIC — Bayesian Information Criterion
 
@@ -426,10 +451,10 @@ BIC tiếp cận bài toán chọn biến dưới góc nhìn hoàn toàn khác: 
 
 BIC được thiết kế để chọn mô hình có xác suất hậu nghiệm cao nhất trong số các mô hình ứng viên. Xác suất này được tính bằng cách tích phân toàn bộ không gian tham số $\theta$ để loại bỏ sự phụ thuộc vào các tham số không quan trọng, chỉ giữ lại thông tin về mô hình và dữ liệu.
 
-@Schwarz1978: $$\boxed{\;\mathrm{BIC} = -2\log L(\hat\theta\mid Y) + p\log n\;} \tag{9}$$ Với hồi quy Gauss: $$\mathrm{BIC} = n\log\!\left(\frac{\mathrm{SSE}}{n}\right) + p\log n. \tag{10}$$
+@Schwarz1978: $$\boxed{\;\mathrm{BIC} = -2\log L(\hat\theta\mid Y) + k\log n\;} \tag{9}$$ Với hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss): $$\mathrm{BIC} = n\log\!\left(\frac{\mathrm{SSE}}{n}\right) + k\log n. \tag{10}$$
 
-- $n$: sample size — cỡ mẫu, tổng số quan sát trong bộ dữ liệu.
-- $p/K$: Số biến trong mô hình. (K thường dùng trong lý thuyết thông tin/Bayes, p dùng trong hồi quy)
+- $n$: cỡ mẫu — tổng số quan sát trong bộ dữ liệu.
+- $k = p+1$: số tham số cần ước lượng (gồm $p$ hệ số góc và hệ số chặn $\beta_0$).
 
 #### Chứng minh toán học: Dẫn xuất công thức BIC từ lý thuyết thống kê (góc nhìn Xấp xỉ Laplace)
 
@@ -450,22 +475,22 @@ BIC được thiết kế để chọn mô hình có xác suất hậu nghiệm 
 
   - Thế hàm xấp xỉ Taylor vào dấu tích phân ban đầu, đưa hằng số $\exp(L_n(\hat{\theta}))$ ra ngoài: $$P(Data | \mathcal{M}) \approx \exp\big(L_n(\hat{\theta})\big) \int \exp\left( - \frac{1}{2} (\theta - \hat{\theta})^T H (\theta - \hat{\theta}) \right) P(\theta | \mathcal{M}) d\theta$$
   - Khi $n$ rất lớn, phân phối Prior $P(\theta | \mathcal{M})$ coi như phẳng và hằng số so với sự nhọn của đỉnh hàm hợp lý, ta đưa nó ra ngoài như một hằng số.
-  - Phần tích phân còn lại chính là dạng tích phân Gauss đa biến chuẩn hóa. Kết quả toán học của tích phân này bằng: $$\int \exp\left( - \frac{1}{2} (\theta - \hat{\theta})^T H (\theta - \hat{\theta}) \right) d\theta = \frac{(2\pi)^{p/2}}{\sqrt{\det(H)}}$$
-  - Suy ra: $P(Data | \mathcal{M}) \approx \exp\big(L_n(\hat{\theta})\big) \cdot \frac{(2\pi)^{p/2}}{\sqrt{\det(H)}} \cdot P(\hat{\theta} | \mathcal{M})$
+  - Phần tích phân còn lại chính là dạng tích phân Gauss đa biến chuẩn hóa trên không gian $k$ chiều (tương ứng $k$ tham số trong $\theta$). Kết quả toán học của tích phân này bằng: $$\int \exp\left( - \frac{1}{2} (\theta - \hat{\theta})^T H (\theta - \hat{\theta}) \right) d\theta = \frac{(2\pi)^{k/2}}{\sqrt{\det(H)}}$$
+  - Suy ra: $P(Data | \mathcal{M}) \approx \exp\big(L_n(\hat{\theta})\big) \cdot \frac{(2\pi)^{k/2}}{\sqrt{\det(H)}} \cdot P(\hat{\theta} | \mathcal{M})$
 
-- **Bước 4: Lấy Log tự nhiên để phá bỏ hàm mũ** $$\ln P(Data | \mathcal{M}) \approx L_n(\hat{\theta}) - \frac{1}{2} \ln \det(H) + \frac{p}{2}\ln(2\pi) + \ln P(\hat{\theta} | \mathcal{M})$$
+- **Bước 4: Lấy Log tự nhiên để phá bỏ hàm mũ** $$\ln P(Data | \mathcal{M}) \approx L_n(\hat{\theta}) - \frac{1}{2} \ln \det(H) + \frac{k}{2}\ln(2\pi) + \ln P(\hat{\theta} | \mathcal{M})$$
 
 - **Bước 5: Cô lập kích thước mẫu** $n$ để rút gọn tiệm cận
 
   - Ma trận Hessian $H$ tổng hợp thông tin từ $n$ quan sát độc lập, do đó mỗi phần tử của ma trận $H$ tăng trưởng tuyến tính theo $n$. Ta có thể viết $H = n \cdot \mathcal{I}$, trong đó $\mathcal{I}$ là ma trận thông tin Fisher trung bình trên một quan sát.
-  - Sử dụng tính chất của định thức ma trận vuông cấp $p$: $\det(H) = \det(n \cdot \mathcal{I}) = n^p \cdot \det(\mathcal{I})$.
-  - Lấy logarit cho định thức này: $$\ln \det(H) = \ln(n^p \cdot \det(\mathcal{I})) = p \ln(n) + \ln \det(\mathcal{I})$$
-  - Thế ngược lại vào phương trình Bước 4 và gom tất cả các thành phần không phụ thuộc vào $n$ (như $\ln \det(\mathcal{I}), \ln(2\pi)$) thành hằng số $O(1)$: $$\ln P(Data | \mathcal{M}) \approx L_n(\hat{\theta}) - \frac{p}{2} \ln(n) + O(1)$$
+  - Sử dụng tính chất của định thức ma trận vuông cấp $k$ (= số tham số): $\det(H) = \det(n \cdot \mathcal{I}) = n^k \cdot \det(\mathcal{I})$.
+  - Lấy logarit cho định thức này: $$\ln \det(H) = \ln(n^k \cdot \det(\mathcal{I})) = k \ln(n) + \ln \det(\mathcal{I})$$
+  - Thế ngược lại vào phương trình Bước 4 và gom tất cả các thành phần không phụ thuộc vào $n$ (như $\ln \det(\mathcal{I}), \ln(2\pi)$) thành hằng số $O(1)$: $$\ln P(Data | \mathcal{M}) \approx L_n(\hat{\theta}) - \frac{k}{2} \ln(n) + O(1)$$
 
 - **Bước 6: Định hình chỉ số BIC hoàn chỉnh**
 
-  - Để đồng bộ với AIC (bài toán tìm giá trị nhỏ nhất), ta nhân toàn bộ phương trình với $-2$: $$BIC = -2 L_n(\hat{\theta}) + p \ln(n)$$
-  - Trong điều kiện hồi quy tuyến tính chuẩn, $-2 L_n(\hat{\theta})$ quy đổi tỷ lệ tương đương với $\frac{SSE}{\hat{\sigma}^2}$, dẫn đến hệ thức phạt quen thuộc: $$BIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + \ln(n) p \hat{\sigma}^2)$$
+  - Để đồng bộ với AIC (bài toán tìm giá trị nhỏ nhất), ta nhân toàn bộ phương trình với $-2$: $$BIC = -2 L_n(\hat{\theta}) + k \ln(n)$$
+  - Trong điều kiện hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (chuẩn), $-2 L_n(\hat{\theta})$ quy đổi tỷ lệ tương đương với $\frac{SSE}{\hat{\sigma}^2}$, dẫn đến hệ thức phạt quen thuộc: $$BIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + \ln(n) \cdot k \cdot \hat{\sigma}^2)$$
 
 Hệ số $\log(n)$ của BIC là kết quả tất yếu trích xuất từ **định thức của ma trận thông tin đạo hàm bậc hai khi thực hiện xấp xỉ hình học chuông Laplace** cho hàm xác suất.
 
@@ -474,12 +499,11 @@ Hệ số $\log(n)$ của BIC là kết quả tất yếu trích xuất từ **�
 Dựa trên xác suất hậu nghiệm Bayes, BIC tìm kiếm mô hình "đúng" nhất sinh ra dữ liệu. Mức phạt của BIC trích xuất từ xấp xỉ Laplace của hàm hợp lý biên, rất khắt khe khi mẫu $n$ lớn.
 
 - **Lack-of-fit:** Đại lượng $-2 \ln L$ (hoặc tương đương $\mathrm{SSE}$).
-- **Penalty:** Đại lượng $p\log(n)$ (hoặc tương đương $p\log(n)\hat{\sigma}^2$). Hình phạt tăng trưởng theo hàm logarit của $n$.
+- **Penalty:** Đại lượng $k\log(n)$ (hoặc tương đương $k\log(n)\hat{\sigma}^2$) với $k = p+1$. Hình phạt tăng trưởng theo hàm logarit của $n$.
 
 BIC xuất phát từ *xấp xỉ Laplace* của marginal likelihood $P(Y\mid M_i)$ — xác suất hậu nghiệm của mô hình $M_i$ với tiên nghiệm đều trên tập mô hình. Khi $n\to\infty$, $-2\log P(Y\mid M_i) \approx \mathrm{BIC}_i + O(1)$.
 
-Đặt $\Delta\mathrm{BIC}_i = \mathrm{BIC}_i - \min_j\mathrm{BIC}_j$: $$P(M_i \mid \text{data}) \;\approx\; \frac{\exp(-\Delta\mathrm{BIC}_i/2)}
-{\sum_r \exp(-\Delta\mathrm{BIC}_r/2)}.$$ Đây là cách diễn giải xác suất *rất tự nhiên* — không có ở AIC hay $C_p$.
+Đặt $\Delta\mathrm{BIC}_i = \mathrm{BIC}_i - \min_j\mathrm{BIC}_j$: $$P(M_i \mid \text{data}) \;\approx\; \frac{\exp(-\Delta\mathrm{BIC}_i/2)}{\sum_r \exp(-\Delta\mathrm{BIC}_r/2)}.$$ Đây là cách diễn giải xác suất *rất tự nhiên* — không có ở AIC hay $C_p$.
 
 ### Ứng dụng
 
@@ -491,9 +515,9 @@ Phổ biến trong: chọn mô hình thống kê *giải thích* (econometrics, 
 
 ### Nguyên lý lựa chọn biến tối ưu dựa trên BIC
 
-**Nguyên lý chọn subset size**: Cũng giống như AIC, khi thêm biến thì giảm SSE. Tuy nhiên, nếu dữ liệu có số mẫu lớn sẽ cộng thêm $log(n)p$ giá trị. Nếu cỡ mẫu $n=1000$ thì $log(1000) \approx\ 6.9$ là thêm xấp xỉ 7 lần số biến.
+**Nguyên lý chọn subset size**: Cũng giống như AIC, khi thêm biến thì giảm SSE. Tuy nhiên, nếu dữ liệu có số mẫu lớn sẽ cộng thêm $k\log(n)$ giá trị. Nếu cỡ mẫu $n=1000$ thì $\log(1000) \approx 6.9$, tức mỗi tham số thêm vào bị phạt xấp xỉ 7 đơn vị — mạnh hơn AIC (phạt 2 mỗi tham số) khoảng 3.5 lần.
 
-Chọn mô hình có BIC nhỏ nhất tức là biến mới đưa vào phải cực kỳ có ý nghĩa giúp SSE giảm một lượng lớn để bù cho phần tăng thêm của $log$.
+Chọn mô hình có BIC nhỏ nhất tức là biến mới đưa vào phải cực kỳ có ý nghĩa, giúp SSE giảm một lượng lớn để bù cho phần tăng thêm của $\log(n)$.
 
 ```{r, echo=FALSE}
 
@@ -554,12 +578,13 @@ Sử dụng khi (i) mục tiêu là **giải thích / xác định mô hình đ�
 \hline
 \textbf{Tiêu chuẩn} & \textbf{Penalty} & \textbf{Mục tiêu} & \textbf{Tính chất} \\
 \hline
-$R^2$         & 0 (đơn điệu)    & Mô tả khớp        & Không dùng chọn biến \\
-$R^2_{adj}$   & $1/(n-p-1)$ ẩn  & Giải thích thô    & Yếu — xu hướng over-fit \\
-$C_p$         & $+2p$           & Dự báo (Gauss)    & Ước lượng test MSE \\
-AIC           & $+2K$           & Dự báo (mọi MLE)  & Hiệu quả tiệm cận \\
-BIC           & $+K\log n$      & Mô hình "đúng"    & Nhất quán \\
+$R^2$         & 0 (đơn điệu)      & Mô tả khớp        & Không dùng chọn biến \\
+$R^2_{adj}$   & $1/(n-p-1)$ ẩn    & Giải thích thô    & Yếu — xu hướng over-fit \\
+$C_p$         & $+2k\hat\sigma^2$ & Dự báo (Gauss)    & Ước lượng test MSE \\
+AIC           & $+2k$             & Dự báo (mọi MLE)  & Hiệu quả tiệm cận \\
+BIC           & $+k\log n$        & Mô hình "đúng"    & Nhất quán \\
 \hline
+\multicolumn{4}{l}{\small $k = p+1$ = số tham số ước lượng (số biến giải thích + hệ số chặn $\beta_0$)} \\
 \end{tabular}
 \end{center}
 
@@ -567,7 +592,7 @@ Hai trục quyết định:
 
 \textbf{1. Mục tiêu là dự báo hay giải thích?} Dự báo $\Rightarrow$ AIC / $C_p$. Giải thích / tìm "true model" $\Rightarrow$ BIC.
 
-\textbf{2. Phạm vi mô hình.} Hồi quy tuyến tính Gauss thuần tuý $\Rightarrow$ có thể dùng $C_p$ (có "đường tham chiếu"). Mô hình tổng quát hơn (GLM, hỗn hợp, ...) $\Rightarrow$ AIC hoặc BIC.
+\textbf{2. Phạm vi mô hình.} Hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss) thuần tuý $\Rightarrow$ có thể dùng $C_p$ (có "đường tham chiếu" $y = k$). Mô hình tổng quát hơn (GLM, hỗn hợp, ...) $\Rightarrow$ AIC hoặc BIC.
 
 Trong thực hành, các tác giả như @Burnham2004 khuyến nghị **không chọn cứng** theo một tiêu chuẩn duy nhất mà *liệt kê* mô hình được mỗi tiêu chuẩn ưu tiên, đối chiếu với chẩn đoán dư (residual diagnostics) và tính diễn giải, rồi chọn mô hình *đơn giản nhất nằm trong vùng "tốt"* của tất cả các tiêu chuẩn — nguyên lý **parsimony** (tiết kiệm).
 
