@@ -95,7 +95,7 @@ knitr::opts_chunk$set(
 {\Large\bfseries BÁO CÁO}\\[0.5em]
 {\LARGE\bfseries MÔ HÌNH HÓA THỐNG KÊ}\\[0.7em]
 \rule{0.6\textwidth}{0.5pt}\\[0.6em]
-{\large Đề tài: \textbf{Lựa chọn mô hình và lựa chọn biến}}
+{\large Đề tài 4: \textbf{Lựa chọn mô hình và lựa chọn biến}}
 
 \vspace{1.5cm}
 
@@ -103,7 +103,7 @@ knitr::opts_chunk$set(
 
 \vspace{1.5cm}
 
-{\large\bfseries Học viên thực hiện:}
+{\large\bfseries Nhóm 8:}
 
 \vspace{0.6em}
 {\small
