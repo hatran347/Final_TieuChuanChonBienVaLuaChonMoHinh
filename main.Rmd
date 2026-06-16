@@ -9,7 +9,7 @@ date: "`r format(Sys.Date(), '%d/%m/%Y')`"
 output:
 
   pdf_document:
-    toc: true
+    toc: false
     toc_depth: 2
     number_sections: true
     latex_engine: xelatex
@@ -35,6 +35,10 @@ header-includes:
   - \usepackage{amsmath}
   - \usepackage{amssymb}
   - \usepackage{booktabs}
+  - \usepackage{tikz}
+  - \usepackage{graphicx}
+  - \let\maketitle\relax
+  - \renewcommand{\contentsname}{Mục Lục}
 
 editor_options:
   markdown:
@@ -61,7 +65,72 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{=latex}
+\begin{titlepage}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture, overlay]
+  \draw[line width=2pt, blue!80!black]
+    ([xshift=0.9cm, yshift=-0.9cm]current page.north west)
+    rectangle
+    ([xshift=-0.9cm, yshift=0.9cm]current page.south east);
+  \draw[line width=0.5pt, blue!80!black]
+    ([xshift=1.1cm, yshift=-1.1cm]current page.north west)
+    rectangle
+    ([xshift=-1.1cm, yshift=1.1cm]current page.south east);
+\end{tikzpicture}
+
+\begin{center}
+
+\vspace*{0.8cm}
+{\LARGE\bfseries TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN}\\[0.3em]
+{\LARGE\bfseries KHOA TOÁN -- TIN HỌC}
+
+\vspace{1.5cm}
+
+\includegraphics[width=4cm]{logo.png}
+
+\vspace{1.5cm}
+
+{\Large\bfseries BÁO CÁO}\\[0.5em]
+{\LARGE\bfseries MÔ HÌNH HÓA THỐNG KÊ}\\[0.7em]
+\rule{0.6\textwidth}{0.5pt}\\[0.6em]
+{\large Đề tài: \textbf{Lựa chọn mô hình và lựa chọn biến}}
+
+\vspace{1.5cm}
+
+{\large Giảng viên hướng dẫn: \textbf{TS. Nguyễn Thị Mộng Ngọc}}
+
+\vspace{1.5cm}
+
+{\large\bfseries Học viên thực hiện:}
+
+\vspace{0.6em}
+{\small
+\begin{tabular}{|l|c|p{5.5cm}|c|}
+\hline
+\textbf{Họ và Tên} & \textbf{Mã số HV} & \textbf{Công việc} & \textbf{Mức độ hoàn thành} \\
+\hline
+Trần Việt Hà       & 25C23020 & Tổng hợp nội dung, code minh họa & 100\% \\
+\hline
+Nguyễn Đình Mai Vi & 25C23004 & Lựa chọn mô hình                 & 100\% \\
+\hline
+Vũ Hà Thư          & 25C23004 & Tiêu chuẩn lựa chọn biến         & 100\% \\
+\hline
+\end{tabular}
+}
+
+\vfill
+
+{\large TP. Hồ Chí Minh, 2026}
+
+\vspace{0.8cm}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
 \newpage
+```
 
 
 ```{r child="parts/DatVanDe.Rmd"}

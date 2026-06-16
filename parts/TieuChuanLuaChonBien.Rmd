@@ -20,7 +20,7 @@ Tuy nhiên, mô hình có quá nhiều biến có thể dẫn đến hiện tư�
 - $y_i,\ \hat y_i$: giá trị thực tế và giá trị dự báo của quan sát thứ $i$.
 - $\hat\sigma^2$: ước lượng không chệch của phương sai sai số $\sigma^2$, lấy từ mô hình đầy đủ.
 
-**Lưu ý quan trọng về ký hiệu:** Hệ số phạt trong $C_p$, AIC, BIC nhân với **số tham số $k = p+1$**, không phải số biến $p$. Nhiều tài liệu (Sheather 2009, Weisberg 2014) dùng ký hiệu `p` nhưng định nghĩa là "số tham số kể cả intercept" — tức đúng bằng $k$ theo quy ước này. ISL (James et al. 2023) dùng ký hiệu `d` cho cùng đại lượng đó.
+**Lưu ý quan trọng về ký hiệu:** Hệ số phạt trong $C_p$, AIC, BIC nhân với **số tham số $k = p+1$**, không phải số biến $p$. Nhiều tài liệu (Sheather 2009, Weisberg 2014) dùng ký hiệu `p` nhưng định nghĩa là "số tham số kể cả intercept" — tức đúng bằng $k$ theo quy ước này. ISL (James et al. 2023) dùng ký hiệu `d` cho số biến (slopes), tương đương $p$ ở đây.
 
 ```{r, echo=FALSE}
 
@@ -45,23 +45,23 @@ test_err <- numeric(10)
 for (d in 1:10) {
   # Lấy tên các biến (tự động)
   vars <- names(which(summary_subsets$outmat[d, ] == "*"))
-  
+
   # Lọc bỏ hệ số chặn (Intercept)
   vars <- vars[vars != "(Intercept)"]
-  
+
   # Ghép công thức
   form <- as.formula(paste("target ~", paste(vars, collapse = "+")))
-  
+
   # Huấn luyện mô hình
   model <- lm(form, data = train_data)
-  
+
   # Tính MSE
   train_err[d] <- mean((train_data$target - predict(model, train_data))^2)
   test_err[d] <- mean((test_data$target - predict(model, test_data))^2)
 }
 
 # ==========================================
-# 5. VẼ BIỂU ĐỒ 
+# 5. VẼ BIỂU ĐỒ
 # ==========================================
 par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
 
@@ -76,9 +76,9 @@ opt_d <- which.min(test_err)
 abline(v = opt_d, lty = 2, col = "grey50", lwd = 2)
 points(opt_d, test_err[opt_d], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
 
-legend("topright", 
-       legend = c("Training error (Giảm đơn điệu)", 
-                  "Test error (Chữ U)", 
+legend("topright",
+       legend = c("Training error (Giảm đơn điệu)",
+                  "Test error (Chữ U)",
                   paste("Vùng tối ưu (p =", opt_d, ")")),
        lty = c(1, 1, 2), lwd = c(3, 3, 2), pch = c(16, 16, NA),
        col = c("steelblue", "firebrick", "grey50"), bty = "n", cex = 0.9)
@@ -218,7 +218,7 @@ par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
 
 # Vẽ đường Adjusted R2
 plot(1:10, adj_r2_vals, type = "b", lwd = 3, col = "forestgreen", pch = 16,
-     xlab = "Số lượng biến trong mô hình (p)", 
+     xlab = "Số lượng biến trong mô hình (p)",
      ylab = expression(Adjusted~R^2),
      main = "Sự biến thiên của Adjusted R-squared theo số lượng biến")
 
@@ -229,8 +229,8 @@ opt_d <- which.max(adj_r2_vals)
 abline(v = opt_d, lty = 2, col = "grey50", lwd = 2)
 points(opt_d, adj_r2_vals[opt_d], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
 
-# 
-legend("bottomright", 
+#
+legend("bottomright",
        legend = c("Adjusted R-squared", paste("Điểm tối ưu (p =", opt_d, ")")),
        lty = c(1, 2), lwd = c(3, 2), pch = c(16, NA),
        col = c("forestgreen", "grey50"), bty = "n")
@@ -260,11 +260,11 @@ $$C_p^{\ast} \;=\; \frac{\mathrm{SSE}}{\hat\sigma^2} + 2k - n. \tag{5}$$
 
 **Hai công thức (4) và (5) tương đương** trong việc xếp hạng mô hình (rank-preserving), nhưng được dùng cho hai mục đích khác nhau:
 
-- **Công thức (4)** ($C_p$, chia $n$): Là ước lượng trực tiếp của **test MSE** (bình phương sai số trung bình ngoài mẫu), có đơn vị giống với $Y^2/n$. Dùng khi muốn chọn mô hình bằng cách **tìm giá trị nhỏ nhất** — mô hình nào có $C_p$ nhỏ nhất thì được chọn. Đây là dạng phổ biến trong ISL (James et al. 2023).
-- **Công thức (5)** ($C_p^*$, không chia $n$): Là dạng gốc của Mallows (1973), thuận tiện cho **vẽ đồ thị chẩn đoán**: khi mô hình không bị bias (đúng), $\mathbb{E}[C_p^*] \approx k$, nên vẽ đồ thị $C_p^*$ theo $k$ (hay $p$) và tìm điểm nào **nằm gần đường tham chiếu $y = k$** nhất. Dạng này thường xuất hiện trong Sheather (2009) và Weisberg (2014).
+- **Công thức (4)** ($C_p$, chia $n$): Là ước lượng trực tiếp của **test MSE** (bình phương sai số trung bình ngoài mẫu), có đơn vị giống với $Y^2/n$. Dùng khi muốn chọn mô hình bằng cách **tìm giá trị nhỏ nhất** — mô hình nào có $C_p$ nhỏ nhất thì được chọn. Đây là dạng phổ biến trong ISL [@James2023, eq.6.2].
+- **Công thức (5)** ($C_p^*$, không chia $n$): Là dạng gốc của @Mallows1973, thuận tiện cho **vẽ đồ thị chẩn đoán**: khi mô hình không bị bias (đúng), $\mathbb{E}[C_p^*] \approx k = p+1$, nên vẽ đồ thị $C_p^*$ theo $p$ và tìm điểm nào **nằm gần đường tham chiếu $y = p+1$** nhất. Dạng này thường xuất hiện trong Mallows (1973) và các sách giáo khoa hồi quy cổ điển.
 
 Mối quan hệ giữa hai công thức: $C_p^* = \dfrac{n}{\hat\sigma^2} C_p - n$, hay $C_p = \dfrac{\hat\sigma^2(C_p^* + n)}{n}$.
-Khi mô hình không bias, $C_p^* \approx k$ tương đương với $C_p \approx \dfrac{(k+n)\hat\sigma^2}{n} \approx \hat\sigma^2$ (với $n \gg k$).
+Khi mô hình không bias, $C_p^* \approx k = p+1$ tương đương với $C_p \approx \dfrac{(k+n)\hat\sigma^2}{n} \approx \hat\sigma^2$ (với $n \gg k$).
 
 #### Chứng minh toán học: Dẫn xuất công thức Mallows' $C_p$ từ lý thuyết thống kê (góc nhìn Bias-Variance)
 
@@ -296,20 +296,22 @@ $C_p$ là ước lượng không chệch của sai số dự báo thực tế ng
 
 ### Ứng dụng
 
-- Ưu điểm: ý nghĩa thống kê rõ ràng (ước lượng test MSE), có thước đo *tuyệt đối* để chẩn đoán bias (vị trí so với $y = p$).
+<!-- [SỬA LỖI NHỎ] "y = p" → "y = p+1" vì đường tham chiếu là E[Cp*] = k = p+1, không phải p -->
+- Ưu điểm: ý nghĩa thống kê rõ ràng (ước lượng test MSE), có thước đo *tuyệt đối* để chẩn đoán bias (vị trí so với $y = p+1$).
 
 - Nhược điểm: cần $\hat\sigma^2$ từ mô hình đầy đủ — nếu mô hình đầy đủ *vẫn* thiếu biến quan trọng thì $\hat\sigma^2$ chệch lên và $C_p$ không còn không chệch; chỉ hợp lệ cho **hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss)** với phương sai đồng nhất.
 
 ### Nguyên lý lựa chọn biến tối ưu dựa trên Mallows' $C_p$
 
-**Nguyên lý chọn subset size**: Theo @Akaike1973, đã chứng minh dựa trên Khoảng cách **Kullback-Leibler** rằng khi ta thêm các biến không cần thiết vào mô hình, khoảng cách giữa phân phối mô hình dự báo và phân phối thực tế sẽ tăng lên, tạo ra hình dạng chữ U. Đáy của chữ U chính là điểm cực tiểu của $C_p$, nên sẽ chọn subset size tại điểm này.
+<!-- [SỬA LỖI A] @Akaike1973 → @Mallows1973; bỏ lập luận KL sai vị trí (KL là nền tảng AIC, không phải Cp) -->
+**Nguyên lý chọn subset size**: Theo @Mallows1973, khi ta thêm các biến không cần thiết vào mô hình, phần sai số do thiên lệch (*bias*) sẽ bằng 0 nhưng thành phần phạt $2k\hat\sigma^2$ tiếp tục tăng, tạo ra hình dạng chữ U cho $C_p$. Đáy của chữ U chính là điểm cực tiểu của $C_p$, nên sẽ chọn subset size tại điểm này. 
 
-Ngoài ra theo công thức $C_p^{\ast}$, tiêu chuẩn chọn là tìm số tham số $k$ (hay số biến $p$) nhỏ nhất sao cho giá trị của $C_p^{\ast}$ giảm và chạm vào đường tham chiếu $y = k$. (Tức khi $C_p^{\ast} \approx k$ — mô hình không chệch (unbiased))
+Ngoài ra theo công thức $C_p^{\ast}$, tiêu chuẩn chọn là tìm số biến $p$ nhỏ nhất sao cho giá trị của $C_p^{\ast}$ giảm và chạm vào đường tham chiếu $y = p+1$ (tức $y = k$). (Tức khi $C_p^{\ast} \approx k = p+1$ — mô hình không chệch (unbiased), [@Mallows1973])
 
 Đặt $\mathrm{MSE}_{\text{test}} = \mathbb{E}[(Y^{\ast}-\hat Y^{\ast})^2]$.
 
 Có thể chứng minh training SSE *chệch xuống* so với $n\cdot\mathrm{MSE}_{\text{test}}$ một lượng xấp xỉ $2k\sigma^2$ (gọi là *optimism*). @Mallows1973 đề xuất *cộng trả lại* đúng độ chệch đó: $$\mathbb{E}\!\left[\frac{1}{n}(\mathrm{SSE} + 2k\hat\sigma^2)\right]
-\;\approx\; \mathrm{MSE}_{\text{test}}.$$ Do đó $C_p$ là **ước lượng không chệch của test MSE** khi $\hat\sigma^2$ không chệch. Với mô hình "đúng" (không bias), $\mathbb{E}(C_p^{\ast}) \approx k$ — quy tắc thực hành: chọn mô hình có $C_p^{\ast}$ gần đường $y = k$ nhất.
+\;\approx\; \mathrm{MSE}_{\text{test}}.$$ Do đó $C_p$ là **ước lượng không chệch của test MSE** khi $\hat\sigma^2$ không chệch. Với mô hình "đúng" (không bias), $\mathbb{E}(C_p^{\ast}) \approx k = p+1$ — quy tắc thực hành: chọn mô hình có $C_p^{\ast}$ gần đường $y = p+1$ nhất.
 
 ```{r, echo=FALSE}
 par(family = "Times")
@@ -318,34 +320,35 @@ par(family = "Times")
 fit <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustive")
 sum_fit <- summary(fit)
 
-# Lấy dữ liệu Cp và số lượng biến (d)
+# Lấy dữ liệu Cp và số lượng biến (p)
 cp_vals <- sum_fit$cp
 d_vals <- 1:length(cp_vals)
 
 # 3. Vẽ biểu đồ Cp
 par(mar = c(4, 4, 2, 2))
 
-# Xác định màu: Vùng underfit (thường là d nhỏ), vùng tốt (gần y=d)
-# Trong diabetes, các biến đầu tiên quan trọng nên Cp giảm rất nhanh
-colors <- ifelse(cp_vals > (d_vals + 2), "firebrick", "steelblue")
+# [SỬA LỖI F] Ngưỡng màu: mô hình tốt khi Cp* ≈ p+1, nên bias cao khi cp_vals > d_vals + 1
+colors <- ifelse(cp_vals > (d_vals + 1), "firebrick", "steelblue")
 
 plot(d_vals, cp_vals, pch = 19, col = colors, type = "b", lwd = 2,
      xlab = "Số lượng biến (p)", ylab = expression(C[p]),
      main = "Biểu đồ Mallows' Cp cho dữ liệu Diabetes",
      ylim = c(0, max(cp_vals) + 5))
 
-# Vẽ đường tham chiếu y = d
-abline(0, 1, lty = 2, col = "grey40", lwd = 2)
+# [SỬA LỖI F] Đường tham chiếu y = p+1 (không phải y = p)
+# E[Cp*] = k = p+1 khi mô hình unbiased (Mallows 1973)
+abline(1, 1, lty = 2, col = "grey40", lwd = 2)
 
 # Chú thích
 legend("topright", legend = c("Underfit (Bias cao)", "Không bias (Tốt)"),
        col = c("firebrick", "steelblue"), pch = 19, bty = "n")
-text(2, cp_vals[2] + 2, "y=d", pos = 3, col = "grey40")
+# [SỬA LỖI F] Label "y=d" → "y=p+1"
+text(2, cp_vals[2] + 2, "y=p+1", pos = 3, col = "grey40")
 ```
 
 **Sử dụng khi**: (i) bài toán là **hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss cổ điển)**;
 
-(ii) $n$ đủ lớn để $\hat\sigma^2$ ổn định; (iii) muốn có thước đo trực quan với "đường tham chiếu" $y = k$ để nhận diện bias. Với GLM, hỗn hợp, ... không dùng $C_p$ mà chuyển sang AIC.
+(ii) $n$ đủ lớn để $\hat\sigma^2$ ổn định; (iii) muốn có thước đo trực quan với "đường tham chiếu" $y = p+1$ để nhận diện bias. Với GLM, hỗn hợp, ... không dùng $C_p$ mà chuyển sang AIC.
 
 ## AIC — Akaike Information Criterion
 
@@ -366,9 +369,15 @@ Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), quy đổi tỷ
 
 **Bước 3: Quy đổi AIC về dạng SSE trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$** Bỏ qua các hằng số không ảnh hưởng đến việc so sánh, nếu giả định $\hat{\sigma}^2$ là hằng số cố định (ước lượng từ mô hình đầy đủ), thế $\ln L$ vào, ta được dạng xấp xỉ tỷ lệ: $$AIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + 2k\hat{\sigma}^2)$$
 
+<!-- [SỬA LỖI D] Thêm ghi chú: dạng trên giả định σ² cố định từ full model. R dùng MLE per-submodel cho ra dạng khác. -->
+*Lưu ý về hai dạng AIC:* Dạng tỷ lệ ở Bước 3 giả định $\hat\sigma^2$ cố định từ mô hình đầy đủ — khi đó AIC $\propto C_p$ và cả hai chọn cùng mô hình. Tuy nhiên, trong thực tế R tính `AIC()` / `extractAIC()` dùng MLE $\hat\sigma^2_j = \text{SSE}_j/n$ riêng cho từng submodel $j$, cho dạng đủ hơn: $$\text{AIC} = n\log\!\left(\frac{\text{SSE}}{n}\right) + 2k$$ Đây là dạng Weisberg (2014, eq.10.6) và Dalpiaz (2021, p.385) sử dụng, và là dạng R thực sự tính toán.
+
 ### Bản chất thống kê: xấp xỉ Kullback–Leibler
 
-Xuất phát từ lý thuyết thông tin, AIC xấp xỉ khoảng cách Kullback-Leibler để tìm mô hình gần nhất với cơ chế sinh dữ liệu. Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), AIC tương đương hoàn toàn với Mallows' $C_p$.
+Xuất phát từ lý thuyết thông tin, AIC xấp xỉ khoảng cách Kullback-Leibler để tìm mô hình gần nhất với cơ chế sinh dữ liệu.
+
+<!-- [SỬA LỖI C] "tương đương hoàn toàn" → xếp hạng giống nhau (chỉ khi σ² cố định từ full model) -->
+Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), AIC và $C_p$ **xếp hạng các mô hình giống nhau** khi cả hai dùng $\hat\sigma^2$ cố định từ mô hình đầy đủ [@James2023, p.234]. Khi AIC dùng MLE $\hat\sigma^2_j = \text{SSE}_j/n$ riêng cho từng submodel (cách R tính `extractAIC()`), kết quả xếp hạng có thể khác $C_p$.
 
 - **Lack-of-fit:** Đại lượng $-2 \ln L$ (hoặc tương đương $\mathrm{SSE}$).
 - **Penalty:** Đại lượng $2k$ (hoặc tương đương $2k\hat{\sigma}^2$). Mức phạt cố định bằng 2 cho mỗi tham số cần ước lượng $k = p+1$.
@@ -399,12 +408,12 @@ fit <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustiv
 aic_vals <- numeric(10)
 for (i in 1:10) {
   # Lấy tên biến (bỏ Intercept)
-  vars_i <- names(coef(fit, i))[-1] 
-  
+  vars_i <- names(coef(fit, i))[-1]
+
   # Ghép công thức và chạy mô hình
   formula_i <- as.formula(paste("target ~", paste(vars_i, collapse = " + ")))
   model_i <- lm(formula_i, data = train_data)
-  
+
   # Lưu AIC
   aic_vals[i] <- AIC(model_i)
 }
@@ -415,7 +424,7 @@ par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
 
 # Vẽ đường AIC
 plot(d_vals, aic_vals, type = "b", lwd = 2, col = "steelblue", pch = 19,
-     xlab = "Số lượng biến trong mô hình (p)", 
+     xlab = "Số lượng biến trong mô hình (p)",
      ylab = "Giá trị AIC",
      main = "Sự biến thiên của AIC theo số lượng biến")
 
@@ -427,15 +436,16 @@ abline(v = opt_d_aic, lty = 2, col = "grey50", lwd = 2)
 points(opt_d_aic, aic_vals[opt_d_aic], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
 
 # Thêm chú giải
-legend("topright", 
+legend("topright",
        legend = c("AIC", paste("Tối ưu K-L Divergence (p =", opt_d_aic, ")")),
        lty = c(1, 2), lwd = c(2, 2), pch = c(19, NA),
        col = c("steelblue", "grey50"), bty = "n")
 ```
 
-AIC chính là **xấp xỉ không chệch** của $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$, cộng với một hằng số không phụ thuộc mô hình. Mô hình có AIC nhỏ nhất là mô hình *gần nhất* với cơ chế sinh dữ liệu theo nghĩa K–L. Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), AIC và $C_p$ **tỷ lệ tuyến tính** — chọn cùng một mô hình.
+AIC chính là **xấp xỉ không chệch** của $-2\mathbb{E}_f[\log g(Y\mid\hat\theta)]$, cộng với một hằng số không phụ thuộc mô hình. Mô hình có AIC nhỏ nhất là mô hình *gần nhất* với cơ chế sinh dữ liệu theo nghĩa K–L. Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss), AIC và $C_p$ **tỷ lệ tuyến tính** khi dùng cùng quy ước $\hat\sigma^2$ — chọn cùng một mô hình.
 
-Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/k < 40$, dùng $\mathrm{AIC}_C = \mathrm{AIC} + \frac{2k(k+1)}{n-k-1}$ [@Hurvich1989] [@Sheather2009]
+<!-- [SỬA LỖI B] Bỏ @Sheather2009 khỏi citation AICc vì Sheather dùng K=p+2 → mẫu số khác -->
+Khi (i) mục tiêu chính là **dự báo / mô hình hoá hiện tượng**, không phải tìm "mô hình thật"; (ii) tin rằng không có mô hình ứng viên nào *đúng* — chỉ là xấp xỉ; (iii) muốn tiêu chuẩn áp dụng được ngoài phạm vi hồi quy tuyến tính. Với $n/k < 40$, dùng $$\mathrm{AIC}_c = \mathrm{AIC} + \frac{2k(k+1)}{n-k-1}$$ [@Hurvich1989], trong đó $k = p+1$ (không tính $\hat\sigma^2$). *Lưu ý: @Sheather2009 dùng $K = p+2$ (tính cả $\hat\sigma^2$), cho mẫu số $n-p-1$ thay vì $n-p-2$ ở đây — cả hai đều là xấp xỉ hợp lệ nhưng giá trị số khác nhau.*
 
 ## BIC — Bayesian Information Criterion
 
@@ -489,8 +499,10 @@ BIC được thiết kế để chọn mô hình có xác suất hậu nghiệm 
 
 - **Bước 6: Định hình chỉ số BIC hoàn chỉnh**
 
-  - Để đồng bộ với AIC (bài toán tìm giá trị nhỏ nhất), ta nhân toàn bộ phương trình với $-2$: $$BIC = -2 L_n(\hat{\theta}) + k \ln(n)$$
-  - Trong điều kiện hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (chuẩn), $-2 L_n(\hat{\theta})$ quy đổi tỷ lệ tương đương với $\frac{SSE}{\hat{\sigma}^2}$, dẫn đến hệ thức phạt quen thuộc: $$BIC \propto \frac{1}{n\hat{\sigma}^2} (SSE + \ln(n) \cdot k \cdot \hat{\sigma}^2)$$
+  - Để đồng bộ với AIC (bài toán tìm giá trị nhỏ nhất), ta nhân toàn bộ phương trình với $-2$: $$\text{BIC} = -2 L_n(\hat{\theta}) + k \ln(n)$$
+  <!-- [SỬA LỖI E] Bỏ mệnh đề sai "-2L quy đổi tương đương SSE/σ²". Khai triển đúng qua MLE. -->
+  - Trong hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (chuẩn), khi dùng MLE $\hat\sigma^2 = \text{SSE}/n$, đại lượng $-2\ln L_{\max}$ khai triển thành: $$-2\ln L_{\max} = n\ln(2\pi) + n\ln\!\left(\frac{\text{SSE}}{n}\right) + n$$ Bỏ các hằng số không phụ thuộc mô hình ($n\ln(2\pi) + n$), ta thu được dạng thực dụng — công thức (10): $$\text{BIC} = n\log\!\left(\frac{\text{SSE}}{n}\right) + k\log n$$
+  - *Lưu ý: Dạng $\text{BIC} \propto \frac{1}{n\hat\sigma^2}(\text{SSE} + \log(n)\cdot k\cdot\hat\sigma^2)$ — tương tự cấu trúc $C_p$ — xuất hiện khi $\hat\sigma^2$ được cố định từ mô hình đầy đủ (không phải MLE per-submodel). Đây là dạng James (2023, eq.6.3) sử dụng.*
 
 Hệ số $\log(n)$ của BIC là kết quả tất yếu trích xuất từ **định thức của ma trận thông tin đạo hàm bậc hai khi thực hiện xấp xỉ hình học chuông Laplace** cho hàm xác suất.
 
@@ -528,12 +540,12 @@ fit <- regsubsets(target ~ ., data = train_data, nvmax = 10, method = "exhaustiv
 bic_vals <- numeric(10)
 for (i in 1:10) {
   # Lấy tên biến (bỏ Intercept)
-  vars_i <- names(coef(fit, i))[-1] 
-  
+  vars_i <- names(coef(fit, i))[-1]
+
   # Ghép công thức và chạy mô hình
   formula_i <- as.formula(paste("target ~", paste(vars_i, collapse = " + ")))
   model_i <- lm(formula_i, data = train_data)
-  
+
   # Lấy giá trị BIC (Chỉ thay hàm AIC() thành BIC() ở đây)
   bic_vals[i] <- BIC(model_i)
 }
@@ -545,7 +557,7 @@ par(mar = c(4, 4, 3, 1), mgp = c(2.5, 1, 0))
 
 # Vẽ đường BIC (Mình đổi sang màu purple để phân biệt với AIC)
 plot(d_vals, bic_vals, type = "b", lwd = 2, col = "purple", pch = 19,
-     xlab = "Số lượng biến trong mô hình (p)", 
+     xlab = "Số lượng biến trong mô hình (p)",
      ylab = "Giá trị BIC",
      main = "Sự biến thiên của BIC theo số lượng biến")
 
@@ -557,7 +569,7 @@ abline(v = opt_d_bic, lty = 2, col = "grey50", lwd = 2)
 points(opt_d_bic, bic_vals[opt_d_bic], col = "firebrick", cex = 2.5, pch = 1, lwd = 2)
 
 # Thêm chú giải
-legend("topright", 
+legend("topright",
        legend = c("BIC", paste("Điểm cực tiểu (p =", opt_d_bic, ")")),
        lty = c(1, 2), lwd = c(2, 2), pch = c(19, NA),
        col = c("purple", "grey50"), bty = "n")
@@ -592,7 +604,7 @@ Hai trục quyết định:
 
 \textbf{1. Mục tiêu là dự báo hay giải thích?} Dự báo $\Rightarrow$ AIC / $C_p$. Giải thích / tìm "true model" $\Rightarrow$ BIC.
 
-\textbf{2. Phạm vi mô hình.} Hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss) thuần tuý $\Rightarrow$ có thể dùng $C_p$ (có "đường tham chiếu" $y = k$). Mô hình tổng quát hơn (GLM, hỗn hợp, ...) $\Rightarrow$ AIC hoặc BIC.
+\textbf{2. Phạm vi mô hình.} Hồi quy tuyến tính $Y$ theo $X_1,\ldots,X_p$ (Gauss) thuần tuý $\Rightarrow$ có thể dùng $C_p$ (có "đường tham chiếu" $y = p+1$). Mô hình tổng quát hơn (GLM, hỗn hợp, ...) $\Rightarrow$ AIC hoặc BIC.
 
 Trong thực hành, các tác giả như @Burnham2004 khuyến nghị **không chọn cứng** theo một tiêu chuẩn duy nhất mà *liệt kê* mô hình được mỗi tiêu chuẩn ưu tiên, đối chiếu với chẩn đoán dư (residual diagnostics) và tính diễn giải, rồi chọn mô hình *đơn giản nhất nằm trong vùng "tốt"* của tất cả các tiêu chuẩn — nguyên lý **parsimony** (tiết kiệm).
 
@@ -602,7 +614,7 @@ Trên thực tế, các tiêu chuẩn trên có thể đưa ra những mô hình
 
 
 ```{r}
-best_subset <- regsubsets(target ~ ., data = train_data, nvmax = 10) 
+best_subset <- regsubsets(target ~ ., data = train_data, nvmax = 10)
 best_summary <- summary(best_subset)
 
 # Tính AIC cho mô hình tốt nhất ở từng số lượng biến
@@ -679,13 +691,13 @@ knitr::kable(best_model_summary,
              caption = "Mô hình tối ưu theo từng tiêu chuẩn")
 ```
 
-Kết quả trên cho thấy mỗi tiêu chuẩn có thể lựa chọn mô hình khác nhau. 
+Kết quả trên cho thấy mỗi tiêu chuẩn có thể lựa chọn mô hình khác nhau.
 Tiêu chuẩn $R^2$ có xu hướng chọn mô hình nhiều biến nhất vì $R^2$ không giảm khi thêm biến vào mô hình. Trong khi đó, Adjusted $R^2$, Mallows' $C_p$, AIC và BIC đều có cơ chế phạt đối với độ phức tạp của mô hình nên thường lựa chọn các mô hình gọn hơn.
 
 Đối với bộ dữ liệu diabetes, các mô hình được lựa chọn bởi Adjusted $R^2$, $C_p$, AIC và BIC có số lượng biến tương đối gần nhau. Điều này cho thấy các biến được lựa chọn có mức độ ổn định nhất định và chứa phần lớn thông tin cần thiết để giải thích biến phản hồi. Các kết quả này sẽ được sử dụng để đối chiếu với các thủ tục lựa chọn biến ở phần tiếp theo.
 
 ```{=html}
-<!-- 
+<!--
 ## 7. Kết luận
 
 Năm tiêu chuẩn $R^2, R^2_{adj}, C_p$, AIC, BIC khác nhau ở *cách định
