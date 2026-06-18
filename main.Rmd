@@ -113,7 +113,7 @@ knitr::opts_chunk$set(
 \hline
 Trần Việt Hà       & 25C23020 & Tổng hợp nội dung, code minh họa & 100\% \\
 \hline
-Nguyễn Đình Mai Vi & 25C23004 & Lựa chọn mô hình                 & 100\% \\
+Nguyễn Đình Mai Vi & 25C23005 & Lựa chọn mô hình                 & 100\% \\
 \hline
 Vũ Hà Thư          & 25C23004 & Tiêu chuẩn lựa chọn biến         & 100\% \\
 \hline

@@ -41,9 +41,9 @@ Việc lựa chọn ngưỡng này phụ thuộc vào mục tiêu của mô hìn
 - **Bước 3: Lặp lại vòng lặp:**
   - Cố định các biến đã ở trong tập $S_{\text{in}}$. Tiếp tục thử nghiệm bắt cặp với các biến còn lại trong tập $S_{\text{out}}$ để tìm ra biến phối hợp bổ trợ tốt nhất với các biến đã được chọn từ trước.
   - **Điều kiện dừng:** Nếu tại một bước nào đó, khi thử nạp bất kỳ biến nào còn lại ở ngoài vào mô hình mà không một biến nào thỏa mãn ngưỡng ý nghĩa thống kê, thì thuật toán dừng lại và đưa ra mô hình ở bước trước đó.
-- **Tổng số mô hình tối đa phải tính toán:**
+- **Tổng số mô hình cần fit:**
 
-$$\text{Total}_{\text{Forward}} = p + (p-1) + (p-2) + \dots + 1 = \frac{p(p+1)}{2}$$
+$$\text{Total}_{\text{Forward}} = 1 + \frac{p(p+1)}{2}$$ [@James2023]
 
 **Áp dụng đối với dataset `diabetes`:**
 
@@ -316,9 +316,9 @@ $$Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_p X_p$$
 - **Bước 3: Tái cấu trúc vòng lặp**
   - Xây dựng lại một mô hình hồi quy mới với các biến còn lại trong tập $S_{\text{in}}$. Việc phân phối dữ liệu trong mô hình thay đổi, dẫn đến các biến sẽ có $p\text{-value}$ mới. Thuật toán lại lặp lại Bước 1 để tìm biến tiếp theo có đóng góp thấp nhất trong mô hình và tiếp tục loại bỏ nếu vi phạm giả thuyết.
   - Điều kiện dừng: Nếu tại một bước rà soát, biến mang giá trị thống kê thấp nhất trong mô hình hiện tại vẫn thoả mãn giả thuyết ý nghĩa thống kê ($p\text{-value} \le \alpha_{\text{crit}}$) thì thuật toán dừng lại và giữ nguyên mô hình tinh gọn này.
-- **Tổng số mô hình tối đa:**
+- **Tổng số mô hình tối đa cần fit:**
 
-$$\text{Total}_{\text{Backward}} = 1 + p + (p-1) + (p-2) + \dots + 2 = 1 + \frac{(p+2)(p-1)}{2}$$ (Công thức này xấp xỉ bằng $\frac{p(p+1)}{2}$ tương tự như Forward Selection).
+$$\text{Total}_{\text{Backward}} = 1 + \frac{p(p+1)}{2}$$ [@James2023]
 
 **Đường đi của Backward đối với dataset `diabetes` như sau:**
 
@@ -574,7 +574,6 @@ $$\alpha_{\text{enter}} < \alpha_{\text{remove}}$$
   - Do hiện tượng đa cộng tuyến, sự xuất hiện của biến mới có thể làm tăng $p\text{-value}$ của một biến cũ. Nếu phát hiện có bất kỳ biến cũ nào bị vượt ngưỡng đầu ra ($p\text{-value} > \alpha_{\text{remove}}$), thuật toán lập tức đẩy biến cũ đó trở lại tập $S_{\text{out}}$.
 - **Điều kiện dừng:**
   - Thuật toán lặp đi lặp lại chu kỳ kép này liên tục và dừng lại khi chạm đến điểm cân bằng động: nếu ở ngoài không còn bất kỳ biến nào đủ tốt để thỏa mãn tiêu chuẩn bước vào ($p\text{-value} \le \alpha_{\text{enter}}$), đồng thời ở bên trong không còn bất cứ biến nào vi phạm tiêu chuẩn đầu ra ($p\text{-value} > \alpha_{\text{remove}}$).
-- **Tổng số mô hình tối đa mà Stepwise phải tính toán xấp xỉ:** $$\text{Total}_{\text{Stepwise}} \approx p^2$$
 
 **Biểu đổ đường đi của stepwise như sau:**
 
@@ -867,7 +866,7 @@ Kết quả cho thấy việc bổ sung các biến giúp cải thiện chất l
 | Điểm bắt đầu | Mô hình rỗng, chỉ chứa hệ số chặn $\beta_0$. | Mô hình đầy đủ, chứa toàn bộ $p$ biến ban đầu. | Mô hình rỗng, chỉ chứa hệ số chặn $\beta_0$. |
 | Cơ chế chính | Thêm dần: Tại mỗi bước, nạp biến độc lập có đóng góp tốt nhất vào mô hình. | Loại trừ dần: Tại mỗi bước, gạch tên biến độc lập ít hữu ích nhất ra khỏi mô hình. | Thêm/Bớt linh hoạt: Thực hiện pha tiến để thêm biến mới, rồi kiểm tra lùi để loại biến cũ bị lu mờ. |
 | Điều kiện dừng (Stopping Criteria) | Khi không có biến nào ở ngoài thỏa mãn ngưỡng đầu vào | Khi tất cả các biến giữ lại đều đạt điều kiện giữ lại. | Khi đạt trạng thái cân bằng động: Bên ngoài không còn biến đủ tốt để vào ($\le \alpha_{\text{enter}}$), bên trong không còn biến để bị loại trừ ($> \alpha_{\text{remove}}$). |
-| Tổng số mô hình tối đa| $$\frac{p(p+1)}{2}$$ | $$1 + \frac{(p+2)(p-1)}{2}$$ | $$\approx p^2$$ |
+| Tổng số mô hình tối đa| $1 + p(p + 1)/2$ | $1 + p(p + 1)/2$ | Không có công thức cố định cho tổng số mô hình cần fit vì số lượng bước tăng/giảm phụ thuộc vào đặc điểm đóng góp của các biến dựa trên dữ liệu.|
 | Hạn chế đối với dữ liệu cao chiều | Chạy được từ bước 1, nhưng bị chặn khi số biến được chọn chạm mốc số lượng quan sát ($n$). | Không thể thực thi nếu $p > n$, vì mô hình đầy đủ ban đầu không thể ước lượng được bằng OLS. | Chạy được từ bước 1, nhưng cũng sẽ bị chặn hoặc gặp lỗi đa cộng tuyến nghiêm trọng nếu không có hiệu chỉnh. |
 | Ưu điểm cốt lõi | \- Tốc độ tính toán nhanh<br> - Phù hợp hơn khi số lượng biến ban đầu lớn. | \- Nhìn được bức tranh toàn cảnh ngay từ đầu<br>  - Giữ được các biến có tính tương tác, bổ trợ cho nhau | - Có cơ chế tự sửa sai liên tục và kiểm soát hiện tượng đa cộng tuyến tốt. |
 | Nhược điểm cốt lõi | Biến đã lọt vào mô hình thì không bao giờ bị loại ra, dễ giữ lại thông tin trùng lặp. | Biến đã bị gạch tên thì không bao giờ có cơ hội quay lại mô hình. | Tốn chi phí tính toán hơn so với hai phương pháp đơn lẻ (do phải quét hai chiều). |
